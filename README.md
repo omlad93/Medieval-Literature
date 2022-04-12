@@ -20,9 +20,15 @@ There are ~1500 fragments (in addition to the labeled data) extracted from 4 dif
 Also, the unextracted senteces are also available.  
 
 ## BaseLine
-to be presented a little bit after passover  
+to be presented a little bit after passover  Medieval-Literature
 | #   | action     | Comments     | Owner |
 | --- | ---------- | ------------ | ----- |
 | 1   | parse data | and Labels   | TBD   |
 | 2   | Word2Vec   | Initial Step | TBD   |
+
+
+## Dependencies
+all the necessary python packages can be installed running on command line:  
+(make sure to add those packages to the file)  
+`pip install -r requirements.txt`
 
