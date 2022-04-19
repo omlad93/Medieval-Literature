@@ -6,20 +6,24 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 import os
 import pandas as pd
 from pandas import DataFrame
-from Labels.labels import Label
+from Labels.labels import Label, format_label
 import pickle
 
-missing_labels = set()
-
+MISSING_LABELS :set[str] = set()
 def convert_labels(topic_list: list[str])->list[Label]:
     '''
     A function to make Labels from Topics (strings)
     '''
     for i,topic in enumerate(topic_list):
+        label = format_label(topic) 
         try:
-            topic_list[i]=Label[topic.upper()]
+            topic_list[i]=Label[label]
         except KeyError as ke:
-            missing_labels.add(topic)
+            print(f'\t + {topic:<24} -> {label:<24} has no Label()')
+            MISSING_LABELS.add(label)
+    # if MISSING_LABELS:
+        # print(f'\t Need To add Lables:{MISSING_LABELS}')
+        # MISSING_LABELS.clear()
     return topic_list
    
 def combine_topics(x) -> list[str]:
@@ -43,6 +47,7 @@ def parse_single_csv(path:str,slim:bool=True, save:bool=False,verbose:bool=False
             pickle.dump(df,pkl)
             if verbose:
                 print(f'\t Saved DataFrame as {pkl.name}')
+
     return df
 
 def parse_all_csv_in_directory(dir_path:str,slim=True,save:bool=False,verbose:bool=False)->Sequence[tuple[DataFrame,str]]:
@@ -67,10 +72,10 @@ def is_for_filling(df:DataFrame)->bool:
 def main():
     # parse_single_csv("Data//csv//Macbeth.csv")
     # parse_all_csv_in_directory("Data\csv",save=True)
-    parse_all_csv_in_directory("Data\csv", save=True)
+    parse_all_csv_in_directory("Data\csv", save=True,verbose=True)
     print()
     for i,(df,play) in enumerate(unpickle_dir("Data\pickle"),start=1):
         print(f'{i}) {play:<37} is for {"Training" if is_for_training(df) else "Filling"}')
-
+    print(f'\t Need To add Lables:{MISSING_LABELS}')
 if __name__ == "__main__":
     main()

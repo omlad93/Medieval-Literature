@@ -1,5 +1,6 @@
 from __future__ import annotations
 from enum import Enum,auto
+from typing import Any, Sequence
 
 words_dict = {
     'ACCOMMODATION'                : set(['nest', 'inhabitants', 'inhabitant', 'inhabit', 'shelter', 'dwell', 'haunting', 'home']),
@@ -330,22 +331,34 @@ class Label(Enum):
     WOMEN = auto()
 
 
-def get_labels(word:str):
-    labels = []
-    for key in words_dict.keys():
-        if word in words_dict[key]:
-            labels.append(key)
-    return key
+def flatten(list_of_lists:Sequence[Sequence[Any]])->Sequence[Any]:
+    return [item for sublist in list_of_lists for item in sublist]
 
-def parse_fregment(fregment:str):
+def format_label(topic:str)->str:
+    label_str = topic.upper().strip().replace("&","").replace('AND',"").replace(" ","_").replace('`','')
+    return label_str
+    
+
+def get_labels(word:str) ->Sequence[Label]:
     labels = []
-    words = fregment.split()
-    for word in words:
-        labels += self.get_labels(word)
+    for label,word_set in words_dict.items():
+        if word in word_set:
+            labels.append(label)
+            print(f'\t{f"`{word}`":<10} is in {Label[label]}')
     return labels
 
+def parse_fregment(fregment:str) -> Sequence[Label]:
+    labels = []
+    words = fregment.split()
+    print(f'{words=}')
+    return flatten(
+        [get_labels(word) for word in words]
+    )
+
 #labels = Label()
-labels_list = get_labels('women')
+labels_list = parse_fregment('If a tree falls down in the forest and no one heared, did it still fell?')
+print(labels_list)
+labels_list = parse_fregment('What am I? I am an Echo breAth’d')
 print(labels_list)
 
 
