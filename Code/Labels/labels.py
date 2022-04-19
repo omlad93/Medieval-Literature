@@ -1,8 +1,13 @@
 from __future__ import annotations
 from enum import Enum,auto
-from typing import Any, Sequence
+from tabnanny import verbose
+from typing import Any, Optional, Sequence
+from difflib import get_close_matches
+import re
 
-words_dict = {
+
+# TODO: Fix the usage squared brackets: such as `Banquo [enemy]`
+words_dict : dict[str,set[str]] = {
     'ACCOMMODATION'                : set(['nest', 'inhabitants', 'inhabitant', 'inhabit', 'shelter', 'dwell', 'haunting', 'home']),
     'AGRICULTURE'                  : set(['plant', 'growing', 'planted', 'seeds', 'grain', 'grow', 'harvest', 'pluck', 'rooted', 'root', 'yoke', \
                                          'husbandry', 'weeds', 'fruitless', 'grafted', 'fruite', 'ripe', 'grows', 'apple', 'tree', 'riper', 'fruitful', 'corn', 'grew', 'garden', 'unpruned', 'mellow', 'gathered']),
@@ -23,7 +28,7 @@ words_dict = {
                                          'fly', 'viperous', 'flies', 'flounder', 'drones', 'wolves', 'gudgeon', 'plumes', 'pearch']),
     'ARCHITECTURE'                 : set(['penthouse', 'temple', 'building', 'castle', 'roof’d', 'roof', 'monuments', 'mansionry', 'vault', 'builded', 'built', 'base',\
                                          'house', 'gate', 'gates', 'doors', 'flore', 'walls', 'doors', 'arched', 'bridge', 'fortress', 'spires', 'porter', 'fabric', 'erecting', 'plank']),
-    'APPEARNCE'                    : set(['look', 'present', 'presented', 'fairest', 'show', 'look not like', 'fair', 'form', 'uglier', 'shaped', 'appear', 'beauty', 'beauties',\
+    'APPEARANCE'                    : set(['look', 'present', 'presented', 'fairest', 'show', 'look not like', 'fair', 'form', 'uglier', 'shaped', 'appear', 'beauty', 'beauties',\
                                          'countenance', 'look', 'sight', 'visage', 'featured', 'mould', 'impress', 'presence', 'seem', 'worse', 'favor', 'vanish', 'unseen', 'sightless', 'invisible']),
     'ART'                          : set(['masterpiece', 'painting', 'picture', 'painted', 'piece of work', 'ornament', 'imitate', 'ballater', 'songs', 'consonets', 'carved']),
     'ASTROLOGY'                    : set(['predominance', 'meteors', 'sphere', 'stars', 'spherelike', 'canicular stars']),
@@ -96,7 +101,7 @@ words_dict = {
                                           'jelly', 'grapes', 'thirsty', 'thirst', 'surfeits', 'chew', 'chewing', 'weaned', 'digestion', 'dinner', 'food', 'fruit', 'feeder', 'starve', 'nectar [food]', 'buttermilk', \
                                           'gnaw', 'beef', 'venison', 'savours', 'honey', 'breakfast', 'gulp down', 'gulp', 'corn', 'board', 'table', 'suckt', 'vessels', 'drenched', 'wassail', 'sweet', \
                                           'sweeter', 'bitter', 'goes down', 'damask prune', 'fill up']),
-    'GAMES__SPORT'                 : set(['play', 'win', 'toys', 'play’dst', 'cast', 'untie', 'plays away', 'dice', 'pleasures', 'shake', 'throw', 'table', 'sports', 'sport', 'sportive', 'cards', \
+    'GAMES__SPORTS'                 : set(['play', 'win', 'toys', 'play’dst', 'cast', 'untie', 'plays away', 'dice', 'pleasures', 'shake', 'throw', 'table', 'sports', 'sport', 'sportive', 'cards', \
                                           'won', 'put me down', 'took up', 'course', 'contend', 'list', 'chalēge', 'challenge', 'prise']),
     'GEOGRAPHY'                    : set(['east', 'travelling', 'land', 'lands', 'Arabia', 'acres', 'meadows', 'geography', '[dukedom, the kingdom, Lydia]', 'voyage', 'journey', 'journeys', 'pale', \
                                           'Attalia', 'adventure', 'abroad', 'country']),
@@ -269,7 +274,7 @@ class Label(Enum):
     FEELINGS = auto()
     FIRE = auto()
     FOOD = auto()
-    GAMES__SPORT = auto()
+    GAMES__SPORTS = auto()
     GEOGRAPHY = auto()
     GREETINGS = auto()
     HERALDRY = auto()
@@ -329,38 +334,134 @@ class Label(Enum):
     WEAPONS__ARMOR = auto()
     WEIGHT = auto()
     WOMEN = auto()
+    NONE = auto()       # Additional Label to deal with non-supported Labels
 
+    @classmethod
+    @property
+    def all_names(cls)->list[str]:
+        '''
+        return a list of all possible Labels (str) 
+        '''
+        return [x.name for x in cls]
+
+    @classmethod
+    def get_label(cls, topic:str)->Label:
+        '''
+        takes a string of a potential label and return the best Label
+        if there is an exact result: Use it.        else:
+            if there is a plural version: Use it.   else:
+                if there is wider label: use it.    else:
+                    get the closeset string represtation.
+        as a last change, if there an `&` sign try switching places
+        otherwise: Return Label.None
+
+        '''
+        label = format_label(topic) 
+        assert label, f'{topic=}, {label=}'
+        try:
+            try:
+                # For a Correct Label
+                return Label[label]
+            except KeyError:
+                try:
+                    # Example: MAN->MEN , MATERIAL->MATERIALS
+                    return Label[plural(label)]
+                except KeyError: 
+                    # Example: MENTAL_FACULTY__STATE -> MENTAL_FACULTY__STATE__ENTITIES
+                    full_label = including_label(label)
+                    assert full_label 
+                    return Label[full_label]
+        except:
+            try:
+                #Find Best Matching Label
+                matches = get_close_matches(label,cls.all_names)
+                return Label[matches[0]]
+            except:
+                try:
+                    # Example: SPORTS__GAMES -> GAMES__SPORTS
+                    return Label[format_label(switch(topic))]
+                except:
+                    return cls.NONE
 
 def flatten(list_of_lists:Sequence[Sequence[Any]])->Sequence[Any]:
+    '''
+    take a list of list and return a list of all sub-elemnets
+    '''
     return [item for sublist in list_of_lists for item in sublist]
 
 def format_label(topic:str)->str:
+    '''
+    Remove unsupported characters and use upper case
+    '''
     label_str = topic.upper().strip().replace("&","").replace('AND',"").replace(" ","_").replace('`','')
     return label_str
-    
 
-def get_labels(word:str) ->Sequence[Label]:
-    labels = []
+def plural(topic:str)->str:
+    '''
+    change topic to use plural:
+    ass S if not MAN/WOMAN
+    '''
+    if topic.endswith('MAN'):
+        return topic.replace('MAN','MEN')
+    return topic+'S'
+
+def switch(topic:str)->str:
+    '''
+    get X & Y return Y & X
+    '''
+    sub_labels = topic.split(' & ')
+    if len(sub_labels)==2:
+        return ' & '.join(reversed(sub_labels))
+
+def including_label(topic:str)->Optional[str]:
+    '''
+    Return a Label that is consisted from the topic and more.
+    '''
+    for label in Label:
+        if f'_{topic}' in label.name:
+            return label.name
+        elif f'{topic}_' in label.name:
+            return label.name
+    return None
+
+
+def get_labels(word:str, verbose:bool=True) ->list[str]:
+    '''
+    get all label that thw word can be assocaited with
+    set verbose=True for deatiled information
+    '''
+    labels : list[str] = []
     for label,word_set in words_dict.items():
         if word in word_set:
             labels.append(label)
-            print(f'\t{f"`{word}`":<10} is in {Label[label]}')
+            if verbose:
+                print(f'\t{f"`{word}`":<10} -> {Label[label]}')
     return labels
 
-def parse_fregment(fregment:str) -> Sequence[Label]:
-    labels = []
+def parse_fregment(fregment:str, verbose:bool=False) -> Sequence[Label]:
+    '''
+    get all labels that the word the the fregment associated with
+    set verbose=True for deatiled information of words in fragment and their labels
+    '''
+    # TODO: Deal with lower/upper case
+    # TODO: Deal with Punctuations (such as `tree,` of `king?`)
     words = fregment.split()
-    print(f'{words=}')
+    if verbose:
+        print(f'{words=}')
     return flatten(
-        [get_labels(word) for word in words]
+        [get_labels(word,verbose) for word in words]
     )
 
-#labels = Label()
-labels_list = parse_fregment('If a tree falls down in the forest and no one heared, did it still fell?')
-print(labels_list)
-labels_list = parse_fregment('What am I? I am an Echo breAth’d')
-print(labels_list)
 
+def main()->None:
+    labels_list = parse_fregment('If a tree falls down in the forest and no one heared, did it still fell?',verbose=True)
+    # print(labels_list)
+    labels_list = parse_fregment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
+    # print(labels_list)
+
+
+if __name__ == '__main__':
+    main()
 
     
 

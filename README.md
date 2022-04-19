@@ -17,14 +17,15 @@ Each fragment is labeled with up to 7 classes as Excel sheet.
 
 **Un-Labeled Data**  
 There are ~1500 fragments (in addition to the labeled data) extracted from 4 different plays.  
-Also, the unextracted senteces are also available.  
+Also, the un-extracted sentences are also available.  
 
 ## BaseLine
 to be presented a little bit after passover  Medieval-Literature
 | #   | action     | Comments     | Owner |
 | --- | ---------- | ------------ | ----- |
-| 1   | parse data | and Labels   | TBD   |
-| 2   | Word2Vec   | Initial Step | TBD   |
+| 1   | parse Data | from Excel   | Omri  |
+| 1   | Labeling   |              | Iris  |
+| 2   | Word2Vec   | Initial Step | Erez  |
 
 
 ## Dependencies
