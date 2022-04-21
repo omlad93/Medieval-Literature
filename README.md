@@ -23,12 +23,13 @@ Also, the un-extracted sentences are also available.
 to be presented a little bit after passover  Medieval-Literature
 | #   | action     | Comments     | Owner |
 | --- | ---------- | ------------ | ----- |
-| 1   | parse Data | from Excel   | Omri  |
+| 1   | Parse Data | from Excel   | Omri  |
 | 1   | Labeling   |              | Iris  |
 | 2   | Word2Vec   | Initial Step | Erez  |
 
 
 ## Dependencies
+The code is written in `python 3.9.12` or higher
 all the necessary python packages can be installed running on command line:  
 (make sure to add those packages to the file)  
 `pip install -r requirements.txt`

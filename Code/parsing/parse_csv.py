@@ -10,6 +10,7 @@ from Labels.labels import Label, format_label, plural,including_label # type: ig
 import pickle
 
 MISSING_LABELS :set[str] = set()
+
 def convert_labels(topic_list: list[str])->list[Label]:
     '''
     A function to make Labels from Topics (strings)
@@ -80,7 +81,6 @@ def is_for_filling(df:DataFrame)->bool:
     '''
     return not any(df['Topics'])
 
-
 def unlabeled_topics():
     '''
     Print the topics that had no Label
@@ -97,5 +97,6 @@ def main()->None:
     print(f'Parsed {len(dfs)} CSV: {len([df for df in dfs if is_for_training(df)])} of them are for training:')
     print(f'\t {", ".join([play for df,play in zip(dfs,plays) if is_for_training(df)])}')
     unlabeled_topics()
+
 if __name__ == "__main__":
     main()
