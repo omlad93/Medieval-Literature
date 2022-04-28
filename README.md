@@ -21,13 +21,18 @@ Also, the un-extracted sentences are also available.
 
 ## BaseLine
 to be presented a little bit after passover  Medieval-Literature
-| #   | action     | Comments     | Owner |
+| #   | Action     | Comments     | Owner |
 | --- | ---------- | ------------ | ----- |
 | 1   | Parse Data | from Excel   | Omri  |
 | 1   | Labeling   |              | Iris  |
 | 2   | Word2Vec   | Initial Step | Erez  |
 
-
+### TODO:
+| Action | Comments | Owner |
+| ------ | -------- | ----- |
+|        |          | Omri  |
+|        |          | Iris  |
+|        |          | Erez  |
 ## Dependencies
 The code is written in `python 3.9.12` or higher
 all the necessary python packages can be installed running on command line:  

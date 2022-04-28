@@ -1,5 +1,6 @@
 from __future__ import annotations
 from enum import Enum,auto
+import pickle
 from tabnanny import verbose
 from typing import Any, Optional, Sequence
 from difflib import get_close_matches
@@ -28,7 +29,7 @@ words_dict : dict[str,set[str]] = {
                                          'fly', 'viperous', 'flies', 'flounder', 'drones', 'wolves', 'gudgeon', 'plumes', 'pearch']),
     'ARCHITECTURE'                 : set(['penthouse', 'temple', 'building', 'castle', 'roof’d', 'roof', 'monuments', 'mansionry', 'vault', 'builded', 'built', 'base',\
                                          'house', 'gate', 'gates', 'doors', 'flore', 'walls', 'doors', 'arched', 'bridge', 'fortress', 'spires', 'porter', 'fabric', 'erecting', 'plank']),
-    'APPEARANCE'                    : set(['look', 'present', 'presented', 'fairest', 'show', 'look not like', 'fair', 'form', 'uglier', 'shaped', 'appear', 'beauty', 'beauties',\
+    'APPEARANCE'                   : set(['look', 'present', 'presented', 'fairest', 'show', 'look not like', 'fair', 'form', 'uglier', 'shaped', 'appear', 'beauty', 'beauties',\
                                          'countenance', 'look', 'sight', 'visage', 'featured', 'mould', 'impress', 'presence', 'seem', 'worse', 'favor', 'vanish', 'unseen', 'sightless', 'invisible']),
     'ART'                          : set(['masterpiece', 'painting', 'picture', 'painted', 'piece of work', 'ornament', 'imitate', 'ballater', 'songs', 'consonets', 'carved']),
     'ASTROLOGY'                    : set(['predominance', 'meteors', 'sphere', 'stars', 'spherelike', 'canicular stars']),
@@ -101,7 +102,7 @@ words_dict : dict[str,set[str]] = {
                                           'jelly', 'grapes', 'thirsty', 'thirst', 'surfeits', 'chew', 'chewing', 'weaned', 'digestion', 'dinner', 'food', 'fruit', 'feeder', 'starve', 'nectar [food]', 'buttermilk', \
                                           'gnaw', 'beef', 'venison', 'savours', 'honey', 'breakfast', 'gulp down', 'gulp', 'corn', 'board', 'table', 'suckt', 'vessels', 'drenched', 'wassail', 'sweet', \
                                           'sweeter', 'bitter', 'goes down', 'damask prune', 'fill up']),
-    'GAMES__SPORTS'                 : set(['play', 'win', 'toys', 'play’dst', 'cast', 'untie', 'plays away', 'dice', 'pleasures', 'shake', 'throw', 'table', 'sports', 'sport', 'sportive', 'cards', \
+    'GAMES__SPORTS'                : set(['play', 'win', 'toys', 'play’dst', 'cast', 'untie', 'plays away', 'dice', 'pleasures', 'shake', 'throw', 'table', 'sports', 'sport', 'sportive', 'cards', \
                                           'won', 'put me down', 'took up', 'course', 'contend', 'list', 'chalēge', 'challenge', 'prise']),
     'GEOGRAPHY'                    : set(['east', 'travelling', 'land', 'lands', 'Arabia', 'acres', 'meadows', 'geography', '[dukedom, the kingdom, Lydia]', 'voyage', 'journey', 'journeys', 'pale', \
                                           'Attalia', 'adventure', 'abroad', 'country']),
@@ -424,7 +425,6 @@ def including_label(topic:str)->Optional[str]:
             return label.name
     return None
 
-
 def get_labels(word:str, verbose:bool=True) ->list[str]:
     '''
     get all label that thw word can be assocaited with
@@ -455,13 +455,15 @@ def parse_fregment(fregment:str, verbose:bool=False) -> Sequence[Label]:
 
 def main()->None:
     labels_list = parse_fregment('If a tree falls down in the forest and no one heared, did it still fell?',verbose=True)
-    # print(labels_list)
+    print(labels_list)
     labels_list = parse_fregment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
     # print(labels_list)
 
 
 if __name__ == '__main__':
     main()
+    
+    
 
     
 
