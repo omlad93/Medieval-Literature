@@ -21,7 +21,7 @@ Also, the un-extracted sentences are also available.
 
 ## BaseLine
 to be presented a little bit after passover  Medieval-Literature
-| #   | action     | Comments     | Owner |
+| #   | Action     | Comments     | Owner |
 | --- | ---------- | ------------ | ----- |
 | 1   | Parse Data | from Excel   | Omri  |
 | 1   | Labeling   |              | Iris  |
@@ -38,6 +38,14 @@ w2v-plays.wv is a model trained on shakespeare's plays I found online. We can al
 import gensim.downloader as gensim_api
 word_vectors = gensim_api.load('word2vec-google-news-300')
 And the rest is the same
+
+### TODO:
+| Action | Comments | Owner |
+| ------ | -------- | ----- |
+|        |          | Omri  |
+|        |          | Iris  |
+|        |          | Erez  |
+
 
 ## Dependencies
 The code is written in `python 3.9.12` or higher

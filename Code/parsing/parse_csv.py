@@ -1,4 +1,6 @@
 from __future__ import annotations
+import json
+import pathlib
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -6,7 +8,7 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 import os
 import pandas as pd # type: ignore
 from pandas import DataFrame,Series
-from Labels.labels import Label, format_label, plural,including_label # type: ignore
+from Labels.labels import Label, words_dict
 import pickle
 
 MISSING_LABELS :set[str] = set()
@@ -44,7 +46,9 @@ def parse_single_csv(path:str,slim:bool=True, save:bool=False,verbose:bool=False
         df['Topics'] = df.apply(combine_topics,axis=1)
         df = df[[c for c in df.columns if c in {'Topics','Fragment'}]]  
     if save:
-        with open(path.replace('csv','pickle'), 'wb') as pkl:
+        pkl_path = path.replace(f'csv',f'pickle\\{"Labeled" if is_for_training(df) else "Empty"}')
+        os.makedirs(os.path.dirname(pkl_path), exist_ok=True)
+        with open(pkl_path, 'wb') as pkl:
             pickle.dump(df,pkl)
             if verbose:
                 print(f'\t Saved DataFrame as {pkl.name}')
@@ -93,10 +97,15 @@ def unlabeled_topics():
 def main()->None:
     # parse_single_csv("Data//csv//Macbeth.csv")
     # parse_all_csv_in_directory("Data\csv",save=True)
-    dfs,plays = zip(*parse_all_csv_in_directory("Data\csv"))
+    dfs,plays = zip(*parse_all_csv_in_directory("Data\csv", save=True))
     print(f'Parsed {len(dfs)} CSV: {len([df for df in dfs if is_for_training(df)])} of them are for training:')
     print(f'\t {", ".join([play for df,play in zip(dfs,plays) if is_for_training(df)])}')
+    # for d,p in zip(dfs,plays):
+    #     print(p)
+    #     print(d)
     unlabeled_topics()
 
 if __name__ == "__main__":
     main()
+
+
