@@ -27,6 +27,17 @@ to be presented a little bit after passover  Medieval-Literature
 | 1   | Labeling   |              | Iris  |
 | 2   | Word2Vec   | Initial Step | Erez  |
 
+### To Use Word2Vec Embeddings
+from gensim.models import Word2Vec, KeyedVectors
+word_vectors = KeyedVectors.load('model/word2vec/w2v-plays.wv')
+vector = word_vectors['queen'] # numpy vector of a word
+for more information and methods, such as similarity calculations, check the docs:
+https://radimrehurek.com/gensim/models/keyedvectors.html
+
+w2v-plays.wv is a model trained on shakespeare's plays I found online. We can also use a pretrained version, that was trained on a part of Google News, with MUCH more data, but of lesser quality for our use case. To use the google news model:
+import gensim.downloader as gensim_api
+word_vectors = gensim_api.load('word2vec-google-news-300')
+And the rest is the same
 
 ## Dependencies
 The code is written in `python 3.9.12` or higher
