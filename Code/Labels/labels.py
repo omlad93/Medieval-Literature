@@ -7,11 +7,13 @@ from typing import Any, Optional, Sequence
 from difflib import get_close_matches
 import re
 import numpy as np
+from gensim.models import Word2Vec, KeyedVectors
+
 
 from pandas import array
 
 vec_dict : dict[str:set(tuple(np.array,str))]
-# TODO: Fix the usage squared brackets: such as `Banquo [enemy]`
+
 words_dict : dict[str,set[str]] = {
     'ACCOMMODATION'                : set(['nest', 'inhabitants', 'inhabitant', 'inhabit', 'shelter', 'dwell', 'haunting', 'home']),
     'AGRICULTURE'                  : set(['plant', 'growing', 'planted', 'seeds', 'grain', 'grow', 'harvest', 'pluck', 'rooted', 'root', 'yoke', \
@@ -231,6 +233,8 @@ words_dict : dict[str,set[str]] = {
     'WOMEN'                        : set(['woman', 'womans', 'dames', 'matrons', 'womanly', 'girl', 'shee', 'she', 'wench', 'wenches', 'wives', 'thence', 'the woman', 'mistris', 'Tullia', 'Nelly', 'sex', 'her', 'weomen', 'thou'])
 }
 
+word_vectors = KeyedVectors.load('model/word2vec/w2v-plays.wv')
+
 # AND or & were replaced by __
 # spaces are replaced by _
 # / replaced by ___
@@ -341,6 +345,9 @@ class Label(Enum):
     WOMEN = auto()
     NONE = auto()       # Additional Label to deal with non-supported Labels
 
+
+    
+    
     @classmethod
     @property
     def all_names(cls)->list[str]:
@@ -493,7 +500,7 @@ def get_labels(vec:np.array, thrashold:int):
 
 # FIXME - till convert word to vec will be implemented
 def convert_word_to_vec(word:str):
-    return np.zeros()
+    return word_vectors[word] # numpy vector of a word
 
 
 def main()->None:
