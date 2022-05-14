@@ -39,6 +39,7 @@ def check_labeling(plays:Sequence[tuple[DataFrame,str]]):
     ## TODO FIXME: use actual loss function.
     ## Instead of `loss()`
     for df,name in plays:
+
         if is_labeled(df):
             df['Loss'] = df.apply(
             lambda row: loss(row.Topics,row.Labels),
@@ -50,12 +51,13 @@ def check_labeling(plays:Sequence[tuple[DataFrame,str]]):
 
 
 
+
 def main():
     filled,empty = split_on_condition(parse_all_csv_in_directory("data\csv", save=True),is_labeled,idx=0)
     print(f'Found {len(filled)} Filled plays, and {len(empty)} Empty plays.')
     label_plays(filled)
     check_labeling(filled)
-    # run(empty)
+
     
 
 
