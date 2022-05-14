@@ -6,7 +6,7 @@ from path import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 
 from utils.utils import split_on_condition
-from labels.labels import Label, parse_fragment # TODO: verify parse_fragment
+from labels.labels import Label, parse_fragment,convert_words_dict_to_vec_dict # TODO: verify parse_fragment
 from parsing.parse_csv import parse_all_csv_in_directory, is_labeled, convert_labels
 
 GRANULARITY = 10
@@ -58,6 +58,7 @@ def check_labeling(plays:Sequence[tuple[DataFrame,str]], verbose:bool=False)->li
 
 
 def main():
+    convert_words_dict_to_vec_dict()
     filled,empty = split_on_condition(parse_all_csv_in_directory("data\csv", save=True),is_labeled,idx=0)
     print(f'Found {len(filled)} Filled plays, and {len(empty)} Empty plays.')
     for t in range(GRANULARITY):

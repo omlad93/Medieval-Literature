@@ -447,6 +447,7 @@ def parse_fragment(fregment:str, threshold:float=0.5 ,verbose:bool=False) -> Seq
     # TODO: Deal with lower/upper case
     # TODO: Deal with Punctuations (such as `tree,` of `king?`)
     #words = fregment.split().replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','')
+    
     labels = []
     temp = fregment.split()
     words = [word.replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','') for word in temp]
@@ -480,7 +481,7 @@ def get_labels(vec:np.array, thrashold:int):
     labels = []
     for label in vec_dict.keys():
         for tpl in vec_dict[label]:
-            similarity = word_vectors.wmdistance(tpl[0],vec)
+            similarity = word_vectors.wmdistance(tpl,vec)
             #inner_prod = calc_inner_product(tpl[0],vec)
             if similarity > thrashold:
                 labels.append(tuple((label, similarity)))
