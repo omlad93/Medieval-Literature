@@ -10,6 +10,7 @@ from difflib import get_close_matches
 import re
 import numpy as np
 from gensim.models import Word2Vec, KeyedVectors
+sys.path.insert(0,str(Path(__file__).parent.parent))
 
 
 from pandas import array
@@ -448,13 +449,15 @@ def parse_fragment(fregment:str, threshold:float=0.5 ,verbose:bool=False) -> Seq
     # TODO: Deal with Punctuations (such as `tree,` of `king?`)
     #words = fregment.split().replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','')
     
-    labels = []
+    labels = set()
     temp = fregment.split()
     words = [word.replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','') for word in temp]
     for word in words:
-        labels += get_labels(word, threshold)
-    labels.sort(key=lambda x:x[1]) #sorting the list by the similarity
-    return labels[:7]
+        for label in get_labels(word, threshold):
+            labels.add(label)
+    labels_list = list(labels)
+    labels_list.sort(key=lambda x:x[1]) #sorting the list by the similarity
+    return labels_list[:7]
     
 def convert_words_dict_to_vec_dict():
     '''
