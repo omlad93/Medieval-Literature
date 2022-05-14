@@ -1,4 +1,5 @@
 from __future__ import annotations
+#from curses.ascii import NUL
 from enum import Enum,auto
 import sys
 from pathlib import Path
@@ -13,7 +14,8 @@ from gensim.models import Word2Vec, KeyedVectors
 
 from pandas import array
 
-vec_dict : dict[str:set(tuple(np.array,str))]
+#vec_dict : dict[str:set(tuple(np.array,str))] = {}
+vec_dict : dict[str:set(tuple(np.array))] = {}
 
 words_dict : dict[str,set[str]] = {
     'ACCOMMODATION'                : set(['nest', 'inhabitants', 'inhabitant', 'inhabit', 'shelter', 'dwell', 'haunting', 'home']),
@@ -437,20 +439,8 @@ def including_label(topic:str)->Optional[str]:
             return label.name
     return None
 
-def matching_labels(word:str, verbose:bool=True) ->list[str]:
-    '''
-    get all label that thw word can be assocaited with
-    set verbose=True for deatiled information
-    '''
-    labels : list[str] = []
-    for label,word_set in words_dict.items():
-        if (word.replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','') in word_set) or (word.lower().replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','') in word_set):
-            labels.append(label)
-            if verbose:
-                print(f'\t{f"`{word}`":<10} -> {Label[label]}')
-    return labels
 
-def parse_fragment(fregment:str, verbose:bool=False) -> Sequence[Label]:
+def parse_fragment(fregment:str, threshold:float ,verbose:bool=False) -> Sequence[Label]:
     '''
     get all labels that the word the the fregment associated with
     set verbose=True for deatiled information of words in fragment and their labels
@@ -458,23 +448,26 @@ def parse_fragment(fregment:str, verbose:bool=False) -> Sequence[Label]:
     # TODO: Deal with lower/upper case
     # TODO: Deal with Punctuations (such as `tree,` of `king?`)
     #words = fregment.split().replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','')
-    words = fregment.split()
-    if verbose:
-        print(f'{words=}')
-    return flatten(
-        [matching_labels(word,verbose) for word in words]
-    )
+    labels = []
+    temp = fregment.split()
+    words = [word.replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','') for word in temp]
+    for word in words:
+        labels += get_labels(word, threshold)
+    labels.sort(key=lambda x:x[1]) #sorting the list by the similarity
+    return labels[:7]
+    
 
 
 def convert_words_dict_to_vec_dict():
     '''
     Converts the words dictionary to (vec:word) dictionary
     '''
-    for label in words_dict.keys:
+    for label in words_dict.keys():
         vec_dict[label] = set()
-        for word in vec_dict[label]:
+        for word in words_dict[label]:
             vec = convert_word_to_vec(word)
-            vec_dict[label].add(tuple((vec,word)))
+            if not np.all(vec==0):
+                vec_dict[label].add(tuple(vec))
 
 
 
@@ -485,30 +478,40 @@ def calc_inner_product(vec1:np.array, vec2:np.array):
     return np.dot(vec1,vec2)
 
 
+
 def get_labels(vec:np.array, thrashold:int):
     '''
     calculates the iiner produt with the words in the vectors dictionary and
-    returns a set of labels that the iiner product were higher than the threshold
+    returns a set of labels that the inner product were higher than the threshold
     '''
-    labels = set()
+    labels = []
     for label in vec_dict.keys():
         for tpl in vec_dict[label]:
-            inner_prod = calc_inner_product(tpl[0],vec)
-            if inner_prod > thrashold:
-                labels.add(label)
+            similarity = word_vectors.wmdistance(tpl[0],vec)
+            #inner_prod = calc_inner_product(tpl[0],vec)
+            if similarity > thrashold:
+                labels.append(tuple((label, similarity)))
     return labels
 
 
 # FIXME - till convert word to vec will be implemented
-def convert_word_to_vec(word:str):
-    return word_vectors[word] # numpy vector of a word
+def convert_word_to_vec(word:str)->np.array:
+    #return word_vectors.getitem(word)
+    try:
+        vec = word_vectors[word] # numpy vector of a word
+    except:
+        vec = np.zeros(5)
+    return vec
+
 
 
 def main()->None:
     convert_words_dict_to_vec_dict()
-    labels_list = parse_fragment('If a tree falls down in the forest and no one heared, did it still fell?',verbose=True)
+    #print(vec_dict)
+    thrashold = 0.0
+    labels_list = parse_fragment('If a tree falls down in the forest and no one heared, did it still fell?',thrashold,verbose=True)
     print(labels_list)
-    labels_list = parse_fragment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
+    #labels_list = parse_fragment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
     # print(labels_list)
 
 
