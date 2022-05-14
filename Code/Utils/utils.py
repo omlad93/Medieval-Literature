@@ -5,8 +5,8 @@ from path import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 import json
 import pickle
-from Labels.labels import words_dict
-from typing import Any
+from labels.labels import words_dict
+from typing import Any, Iterable
 
 
 class FileType(Enum):
@@ -44,9 +44,21 @@ def print_conditional(p:Any,verbose:bool):
         print(p)
 
 
+def split_on_condition(seq, condition, idx=0):
+    '''
+    Takes a sq
+    '''
+    a, b = [], []
+    for item in seq:
+        if isinstance(item,Iterable):
+            (a if condition(item[idx]) else b).append(item)
+        else:
+            (a if condition(item) else b).append(item)
+    return a, b
+
 def main():
-    save_as(words_dict, "Code/Utils/words_dict_str",FileType.JSON, verbose=True)
-    save_as(words_dict, "Code/Utils/words_dict_str",FileType.PICKLE, verbose=True)
+    save_as(words_dict, "code/utils/words_dict_str",FileType.JSON, verbose=True)
+    save_as(words_dict, "code/utils/words_dict_str",FileType.PICKLE, verbose=True)
     
 
 if __name__ == "__main__":
