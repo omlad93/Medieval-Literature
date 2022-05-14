@@ -1,7 +1,8 @@
 from __future__ import annotations
 from enum import Enum,auto
-import pickle
-import json
+import sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).parent.parent))
 from tabnanny import verbose
 from typing import Any, Optional, Sequence
 from difflib import get_close_matches
@@ -233,7 +234,7 @@ words_dict : dict[str,set[str]] = {
     'WOMEN'                        : set(['woman', 'womans', 'dames', 'matrons', 'womanly', 'girl', 'shee', 'she', 'wench', 'wenches', 'wives', 'thence', 'the woman', 'mistris', 'Tullia', 'Nelly', 'sex', 'her', 'weomen', 'thou'])
 }
 
-word_vectors = KeyedVectors.load('model/word2vec/w2v-plays.wv')
+word_vectors = KeyedVectors.load('code/model/word2vec/w2v-plays.wv')
 
 # AND or & were replaced by __
 # spaces are replaced by _
@@ -436,7 +437,7 @@ def including_label(topic:str)->Optional[str]:
             return label.name
     return None
 
-def get_labels(word:str, verbose:bool=True) ->list[str]:
+def matching_labels(word:str, verbose:bool=True) ->list[str]:
     '''
     get all label that thw word can be assocaited with
     set verbose=True for deatiled information
@@ -449,7 +450,7 @@ def get_labels(word:str, verbose:bool=True) ->list[str]:
                 print(f'\t{f"`{word}`":<10} -> {Label[label]}')
     return labels
 
-def parse_fregment(fregment:str, verbose:bool=False) -> Sequence[Label]:
+def parse_fragment(fregment:str, verbose:bool=False) -> Sequence[Label]:
     '''
     get all labels that the word the the fregment associated with
     set verbose=True for deatiled information of words in fragment and their labels
@@ -461,7 +462,7 @@ def parse_fregment(fregment:str, verbose:bool=False) -> Sequence[Label]:
     if verbose:
         print(f'{words=}')
     return flatten(
-        [get_labels(word,verbose) for word in words]
+        [matching_labels(word,verbose) for word in words]
     )
 
 
@@ -505,9 +506,9 @@ def convert_word_to_vec(word:str):
 
 def main()->None:
     convert_words_dict_to_vec_dict()
-    labels_list = parse_fregment('If a tree falls down in the forest and no one heared, did it still fell?',verbose=True)
+    labels_list = parse_fragment('If a tree falls down in the forest and no one heared, did it still fell?',verbose=True)
     print(labels_list)
-    labels_list = parse_fregment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
+    labels_list = parse_fragment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
     # print(labels_list)
 
 

@@ -40,7 +40,7 @@ https://radimrehurek.com/gensim/models/keyedvectors.html
 ```Python
 import gensim.downloader as gensim_api
 word_vectors = gensim_api.load('word2vec-google-news-300')
-And the rest is the same
+# The rest is the same
 ```
   
   

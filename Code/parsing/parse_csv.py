@@ -1,6 +1,4 @@
 from __future__ import annotations
-import json
-import pathlib
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -8,7 +6,7 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 import os
 import pandas as pd # type: ignore
 from pandas import DataFrame,Series
-from Labels.labels import Label, words_dict
+from labels.labels import Label, words_dict
 import pickle
 
 MISSING_LABELS :set[str] = set()
@@ -46,7 +44,7 @@ def parse_single_csv(path:str,slim:bool=True, save:bool=False,verbose:bool=False
         df['Topics'] = df.apply(combine_topics,axis=1)
         df = df[[c for c in df.columns if c in {'Topics','Fragment'}]]  
     if save:
-        pkl_path = path.replace(f'csv',f'pickle\\{"Labeled" if is_for_training(df) else "Empty"}')
+        pkl_path = path.replace(f'csv',f'pickle\\{"Labeled" if is_labeled(df) else "Empty"}')
         os.makedirs(os.path.dirname(pkl_path), exist_ok=True)
         with open(pkl_path, 'wb') as pkl:
             pickle.dump(df,pkl)
@@ -73,7 +71,7 @@ def unpickle_dir(dir_path:str)->Sequence[tuple[DataFrame,str]]:
         for file in os.listdir(dir_path) if file.endswith('pickle')
     )
 
-def is_for_training(df:DataFrame)->bool:
+def is_labeled(df:DataFrame)->bool:
     '''
     Returns True if there are Topics mentioned for any fragment
     '''
@@ -94,12 +92,13 @@ def unlabeled_topics():
     else:
         print(f'\t > Could Not Label: {", ".join([f"`{x}`" for x in MISSING_LABELS])}')
 
+
 def main()->None:
     # parse_single_csv("Data//csv//Macbeth.csv")
     # parse_all_csv_in_directory("Data\csv",save=True)
-    dfs,plays = zip(*parse_all_csv_in_directory("Data\csv", save=True))
-    print(f'Parsed {len(dfs)} CSV: {len([df for df in dfs if is_for_training(df)])} of them are for training:')
-    print(f'\t {", ".join([play for df,play in zip(dfs,plays) if is_for_training(df)])}')
+    dfs,plays = zip(*parse_all_csv_in_directory("data\csv", save=True))
+    print(f'Parsed {len(dfs)} CSV: {len([df for df in dfs if is_labeled(df)])} of them are for training:')
+    print(f'\t {", ".join([play for df,play in zip(dfs,plays) if is_labeled(df)])}')
     # for d,p in zip(dfs,plays):
     #     print(p)
     #     print(d)
