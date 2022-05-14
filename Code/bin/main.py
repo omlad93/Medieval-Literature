@@ -23,7 +23,9 @@ def loss(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_w=1.
     return miss_w*len(misses) + extra_w*len(extras)
 
 
-def run(plays:Sequence[tuple[DataFrame,str]]):
+def label_plays(plays:Sequence[tuple[DataFrame,str]]):
+    ## TODO FIXME: use actual labeling function according to vectors.
+    ## Instead of `parse_fragment()`
     for df,name in plays:
         # Label it again
         df['Labels'] = df.apply(
@@ -31,23 +33,31 @@ def run(plays:Sequence[tuple[DataFrame,str]]):
         axis = 1
         )
         print(f"\t > Applied labels on {name}")
+
+            
+def check_labeling(plays:Sequence[tuple[DataFrame,str]]):
+    ## TODO FIXME: use actual loss function.
+    ## Instead of `loss()`
+    for df,name in plays:
+
         if is_labeled(df):
             df['Loss'] = df.apply(
             lambda row: loss(row.Topics,row.Labels),
             axis = 1
             )
-            print(f'\t\t Average Diff for {name} is {np.average(df.Loss):.2f}')
+            print(f'\t > Average Diff for {name} is {np.average(df.Loss):.2f}')
         else:
-            print(f'\t\t{name} is not for training, can`t calculate loss')
-            
+            print(f'\t > {name} is not for training, can`t calculate loss')
+
 
 
 
 def main():
     filled,empty = split_on_condition(parse_all_csv_in_directory("data\csv", save=True),is_labeled,idx=0)
     print(f'Found {len(filled)} Filled plays, and {len(empty)} Empty plays.')
-    run(filled)
-    run(empty)
+    label_plays(filled)
+    check_labeling(filled)
+
     
 
 
