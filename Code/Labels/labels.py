@@ -439,8 +439,7 @@ def including_label(topic:str)->Optional[str]:
             return label.name
     return None
 
-
-def parse_fragment(fregment:str, threshold:float ,verbose:bool=False) -> Sequence[Label]:
+def parse_fragment(fregment:str, threshold:float=0.5 ,verbose:bool=False) -> Sequence[Label]:
     '''
     get all labels that the word the the fregment associated with
     set verbose=True for deatiled information of words in fragment and their labels
@@ -456,8 +455,6 @@ def parse_fragment(fregment:str, threshold:float ,verbose:bool=False) -> Sequenc
     labels.sort(key=lambda x:x[1]) #sorting the list by the similarity
     return labels[:7]
     
-
-
 def convert_words_dict_to_vec_dict():
     '''
     Converts the words dictionary to (vec:word) dictionary
@@ -469,15 +466,11 @@ def convert_words_dict_to_vec_dict():
             if not np.all(vec==0):
                 vec_dict[label].add(tuple(vec))
 
-
-
 def calc_inner_product(vec1:np.array, vec2:np.array):
     '''
     Calculates the inner product between two vectors
     '''
     return np.dot(vec1,vec2)
-
-
 
 def get_labels(vec:np.array, thrashold:int):
     '''
@@ -493,7 +486,6 @@ def get_labels(vec:np.array, thrashold:int):
                 labels.append(tuple((label, similarity)))
     return labels
 
-
 # FIXME - till convert word to vec will be implemented
 def convert_word_to_vec(word:str)->np.array:
     #return word_vectors.getitem(word)
@@ -503,8 +495,6 @@ def convert_word_to_vec(word:str)->np.array:
         vec = np.zeros(5)
     return vec
 
-
-
 def main()->None:
     convert_words_dict_to_vec_dict()
     #print(vec_dict)
@@ -513,7 +503,6 @@ def main()->None:
     print(labels_list)
     #labels_list = parse_fragment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
     # print(labels_list)
-
 
 if __name__ == '__main__':
     main()

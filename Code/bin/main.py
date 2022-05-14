@@ -1,5 +1,5 @@
 import sys
-from typing import Sequence
+from typing import Optional, Sequence
 import numpy as np
 from pandas import DataFrame
 from path import Path
@@ -9,6 +9,7 @@ from utils.utils import split_on_condition
 from labels.labels import Label, parse_fragment # TODO: verify parse_fragment
 from parsing.parse_csv import parse_all_csv_in_directory, is_labeled, convert_labels
 
+GRANULARITY = 10
 
 
 def loss(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_w=1.0):
@@ -23,31 +24,35 @@ def loss(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_w=1.
     return miss_w*len(misses) + extra_w*len(extras)
 
 
-def label_plays(plays:Sequence[tuple[DataFrame,str]]):
+def label_plays(*,plays:Sequence[tuple[DataFrame,str]], threshold:float, verbose:bool=False)->None:
     ## TODO FIXME: use actual labeling function according to vectors.
     ## Instead of `parse_fragment()`
     for df,name in plays:
         # Label it again
         df['Labels'] = df.apply(
-        lambda row: convert_labels(parse_fragment(row.Fragment)),
+        lambda row: convert_labels(parse_fragment(row.Fragment, threshold)),
         axis = 1
         )
-        print(f"\t > Applied labels on {name}")
+        if verbose:
+            print(f"\t > Applied labels on {name}")
 
             
-def check_labeling(plays:Sequence[tuple[DataFrame,str]]):
+def check_labeling(plays:Sequence[tuple[DataFrame,str]], verbose:bool=False)->list[float]:
     ## TODO FIXME: use actual loss function.
     ## Instead of `loss()`
+    ret_list = []
     for df,name in plays:
-
         if is_labeled(df):
             df['Loss'] = df.apply(
             lambda row: loss(row.Topics,row.Labels),
             axis = 1
             )
-            print(f'\t > Average Diff for {name} is {np.average(df.Loss):.2f}')
-        else:
+            if verbose:
+                print(f'\t > Average Diff for {name} is {np.average(df.Loss):.2f}')
+            ret_list.append(np.average(df.Loss))
+        elif verbose:
             print(f'\t > {name} is not for training, can`t calculate loss')
+    return ret_list
 
 
 
@@ -55,8 +60,11 @@ def check_labeling(plays:Sequence[tuple[DataFrame,str]]):
 def main():
     filled,empty = split_on_condition(parse_all_csv_in_directory("data\csv", save=True),is_labeled,idx=0)
     print(f'Found {len(filled)} Filled plays, and {len(empty)} Empty plays.')
-    label_plays(filled)
-    check_labeling(filled)
+    for t in range(GRANULARITY):
+        threshold=t/GRANULARITY
+        label_plays(plays=filled,threshold=threshold)
+        performance=check_labeling(filled)
+        print (f'{threshold= :.3f}:\t{performance=}')
 
     
 
