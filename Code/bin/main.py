@@ -33,7 +33,7 @@ def mismatch(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_
 def label_plays(*,plays:Sequence[tuple[DataFrame,str]], threshold:float, verbose:bool=False)->None:
     for df,name in plays:
         if verbose:
-            print(f"\t > Applying labels on {name}", end='\t')
+            print(f"\t > Applying labels on {name} using {threshold=}", end='\t')
         
         df['Labels'] = df.apply(
         lambda row: parse_fragment(row.Fragment, threshold),
