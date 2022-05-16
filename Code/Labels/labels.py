@@ -9,7 +9,7 @@ from difflib import get_close_matches
 import re
 import numpy as np
 from gensim.models import Word2Vec, KeyedVectors
-from utils.utils import normalized_dot_product
+from Utils.utils import normalized_dot_product
 
 
 
