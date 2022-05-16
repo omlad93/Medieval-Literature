@@ -2,11 +2,11 @@
 from enum import Enum, auto
 import sys
 import numpy as np
-from path import Path
+from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 import json
 import pickle
-# from labels.labels import words_dict
+from Labels.labels import words_dict
 from typing import Any, Iterable
 
 

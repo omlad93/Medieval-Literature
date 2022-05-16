@@ -3,7 +3,7 @@ import re
 from nltk.tokenize import sent_tokenize, word_tokenize
 from gensim.models import Word2Vec
 
-PLAY_FILES_DIR = 'Raw_Data/shakespeare_plays/'
+PLAY_FILES_DIR = 'Raw_Data/plays/'
 CORPUS_DIR = 'Data/corpus.txt'
 
 def build_corpus():
@@ -29,4 +29,5 @@ def load_and_pretrain_model():
     model.save('w2v-plays.model')
     model.wv.save('w2v-plays.wv')
 
+# build_corpus()
 load_and_pretrain_model()
