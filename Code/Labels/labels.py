@@ -4,13 +4,13 @@ from enum import Enum,auto
 import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
-from tabnanny import verbose
 from typing import Any, Optional, Sequence
 from difflib import get_close_matches
 import re
 import numpy as np
 from gensim.models import Word2Vec, KeyedVectors
-sys.path.insert(0,str(Path(__file__).parent.parent))
+from utils.utils import normalized_dot_product
+
 
 
 from pandas import array
@@ -448,7 +448,6 @@ def parse_fragment(fregment:str, threshold:float=0.5 ,verbose:bool=False) -> Seq
     # TODO: Deal with lower/upper case
     # TODO: Deal with Punctuations (such as `tree,` of `king?`)
     #words = fregment.split().replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','')
-    
     labels = set()
     temp = fregment.split()
     words = [word.replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','') for word in temp]
@@ -456,7 +455,7 @@ def parse_fragment(fregment:str, threshold:float=0.5 ,verbose:bool=False) -> Seq
         for label in get_labels(word, threshold):
             labels.add(label)
     labels_list = list(labels)
-    labels_list.sort(key=lambda x:x[1]) #sorting the list by the similarity
+    labels_list.sort(key=lambda x:-x[1]) #sorting the list by the similarity
     return labels_list[:7]
     
 def convert_words_dict_to_vec_dict():
@@ -476,7 +475,7 @@ def calc_inner_product(vec1:np.array, vec2:np.array):
     '''
     return np.dot(vec1,vec2)
 
-def get_labels(vec:np.array, thrashold:int):
+def get_labels(word:str, thrashold:float=0.5):
     '''
     calculates the iiner produt with the words in the vectors dictionary and
     returns a set of labels that the inner product were higher than the threshold
@@ -484,10 +483,16 @@ def get_labels(vec:np.array, thrashold:int):
     labels = []
     for label in vec_dict.keys():
         for tpl in vec_dict[label]:
-            similarity = word_vectors.wmdistance(tpl,vec)
+            # similarity = word_vectors.wmdistance(tpl,vec)
+            try:
+                similarity = normalized_dot_product(tpl,word_vectors[word])
+            except:
+                similarity = 0.0
             #inner_prod = calc_inner_product(tpl[0],vec)
             if similarity > thrashold:
                 labels.append(tuple((label, similarity)))
+                break
+    sorted_labels= sorted(labels,key=lambda t:-t[1])
     return labels
 
 # FIXME - till convert word to vec will be implemented

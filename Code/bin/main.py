@@ -12,7 +12,7 @@ from parsing.parse_csv import parse_all_csv_in_directory, is_labeled, convert_la
 GRANULARITY = 10
 
 
-def loss(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_w=1.0):
+def mismatch(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_w=1.0):
     '''
     compare two label-sets of a fragment. 
     given 2 labels sequence (1 hand labeled and 1 by this  scripts):
@@ -25,33 +25,34 @@ def loss(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_w=1.
 
 
 def label_plays(*,plays:Sequence[tuple[DataFrame,str]], threshold:float, verbose:bool=False)->None:
-    ## TODO FIXME: use actual labeling function according to vectors.
-    ## Instead of `parse_fragment()`
     for df,name in plays:
-        # Label it again
+        if verbose:
+            print(f"\t > Applying labels on {name}", end='\t')
+        
         df['Labels'] = df.apply(
-        lambda row: convert_labels(parse_fragment(row.Fragment, threshold)),
+        lambda row: parse_fragment(row.Fragment, threshold),
         axis = 1
         )
         if verbose:
-            print(f"\t > Applied labels on {name}")
+            print(f"Done")
+        
 
-            
+             
 def check_labeling(plays:Sequence[tuple[DataFrame,str]], verbose:bool=False)->list[float]:
-    ## TODO FIXME: use actual loss function.
+    ## TODO FIXME: use actual performance function.
     ## Instead of `loss()`
     ret_list = []
     for df,name in plays:
         if is_labeled(df):
             df['Loss'] = df.apply(
-            lambda row: loss(row.Topics,row.Labels),
+            lambda row: mismatch(row.Topics,row.Labels),
             axis = 1
             )
             if verbose:
                 print(f'\t > Average Diff for {name} is {np.average(df.Loss):.2f}')
             ret_list.append(np.average(df.Loss))
         elif verbose:
-            print(f'\t > {name} is not for training, can`t calculate loss')
+            print(f'\t > {name} is not for training, can`t calculate mismatch')
     return ret_list
 
 
@@ -63,7 +64,7 @@ def main():
     print(f'Found {len(filled)} Filled plays, and {len(empty)} Empty plays.')
     for t in range(GRANULARITY):
         threshold=t/GRANULARITY
-        label_plays(plays=filled,threshold=threshold)
+        label_plays(plays=filled,threshold=threshold,verbose=True)
         performance=check_labeling(filled)
         print (f'{threshold= :.3f}:\t{performance=}')
 

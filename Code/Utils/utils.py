@@ -1,11 +1,12 @@
 
 from enum import Enum, auto
 import sys
+import numpy as np
 from path import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 import json
 import pickle
-from labels.labels import words_dict
+# from labels.labels import words_dict
 from typing import Any, Iterable
 
 
@@ -56,9 +57,20 @@ def split_on_condition(seq, condition, idx=0):
             (a if condition(item) else b).append(item)
     return a, b
 
+
+def normalized_dot_product(v,w):
+    def normalize(x):
+        norm=np.linalg.norm(x)
+        if norm==0:
+            norm=np.finfo(x.dtype).eps
+        return x/norm
+    return np.dot(normalize(v),normalize(w))
+
+
 def main():
-    save_as(words_dict, "code/utils/words_dict_str",FileType.JSON, verbose=True)
-    save_as(words_dict, "code/utils/words_dict_str",FileType.PICKLE, verbose=True)
+    # save_as(words_dict, "code/utils/words_dict_str",FileType.JSON, verbose=True)
+    # save_as(words_dict, "code/utils/words_dict_str",FileType.PICKLE, verbose=True)
+    pass
     
 
 if __name__ == "__main__":
