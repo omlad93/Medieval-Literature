@@ -8,8 +8,14 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 from utils.utils import split_on_condition
 from labels.labels import Label, parse_fragment,convert_words_dict_to_vec_dict # TODO: verify parse_fragment
 from parsing.parse_csv import parse_all_csv_in_directory, is_labeled, convert_labels
+import datetime
 
-GRANULARITY = 10
+
+
+
+GRANULARITY = 1/10
+MIN_T = 5
+MAX_T = 10
 
 
 def mismatch(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_w=1.0):
@@ -59,16 +65,21 @@ def check_labeling(plays:Sequence[tuple[DataFrame,str]], verbose:bool=False)->li
 
 
 def main():
+    e = datetime.datetime.now()
+    print (f'\nStarting  Run {e.strftime("%Y-%m-%d %H:%M:%S")}\n')
+
     convert_words_dict_to_vec_dict()
     filled,empty = split_on_condition(parse_all_csv_in_directory("data\csv", save=True),is_labeled,idx=0)
     print(f'Found {len(filled)} Filled plays, and {len(empty)} Empty plays.')
-    for t in range(GRANULARITY):
-        threshold=t/GRANULARITY
+    for t in range(MIN_T,MAX_T):
+        threshold=t*GRANULARITY
         label_plays(plays=filled,threshold=threshold,verbose=True)
         performance=check_labeling(filled)
         print (f'{threshold= :.3f}:\t{performance=}')
 
-    
+    e = datetime.datetime.now()
+    print (f'\nFinishing Run {e.strftime("%Y-%m-%d %H:%M:%S")}\n')
+
 
 
 

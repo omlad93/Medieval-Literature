@@ -21,11 +21,12 @@ Also, the un-extracted sentences are also available.
 
 ## BaseLine
 to be presented a little bit after passover  Medieval-Literature
-| #   | Action     | Comments     | Owner |
-| --- | ---------- | ------------ | ----- |
-| 1   | Parse Data | from Excel   | Omri  |
-| 1   | Labeling   |              | Iris  |
-| 2   | Word2Vec   | Initial Step | Erez  |
+| #   | Module     | Comments                          | Owner |
+| --- | ---------- | --------------------------------- | ----- |
+| 1   | Parse Data | from Excel                        | Omri  |
+| 2   | Labeling   |                                   | Iris  |
+| 3   | Word2Vec   | Initial Step                      | Erez  |
+| 4   | Main       | from csv to csv (waiting for 2&3) | Omri  |
 
 ### To Use Word2Vec Embeddings
 ```Python
