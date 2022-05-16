@@ -17,7 +17,7 @@ def build_corpus():
         if not file.endswith("processed.txt"):
             text = text[text.index('ACT 1'):]
         for i in sent_tokenize(text):
-            i = re.sub('[^a-zA-Z0-9 \n]', '', i)
+            i = re.sub('[^a-zA-Z0-9 \n]', '', i.lower())
             words = word_tokenize(i)
             corpus_file.write(f"{' '.join(words)}\n")
 
@@ -29,5 +29,5 @@ def load_and_pretrain_model():
     model.save('w2v-plays.model')
     model.wv.save('w2v-plays.wv')
 
-# build_corpus()
+build_corpus()
 load_and_pretrain_model()

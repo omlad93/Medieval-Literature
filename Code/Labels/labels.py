@@ -12,7 +12,6 @@ from gensim.models import Word2Vec, KeyedVectors
 from Utils.utils import normalized_dot_product
 
 
-
 from pandas import array
 
 #vec_dict : dict[str:set(tuple(np.array,str))] = {}
@@ -252,7 +251,7 @@ class Label(Enum):
     ANATOMY = auto()
     ANIMALS = auto()
     ARCHITECTURE =  auto()
-    APPEARNCE = auto()
+    APPEARANCE = auto()
     ART = auto()
     ASTROLOGY = auto()
     ASSISTANCE = auto()
@@ -350,7 +349,8 @@ class Label(Enum):
     NONE = auto()       # Additional Label to deal with non-supported Labels
 
 
-    
+    def __lt__(self, other):
+        return self.name < other.name
     
     @classmethod
     @property
@@ -440,23 +440,19 @@ def including_label(topic:str)->Optional[str]:
             return label.name
     return None
 
-def parse_fragment(fregment:str, threshold:float=0.5 ,verbose:bool=False) -> Sequence[Label]:
+def parse_fragment(fragment:str, threshold:float=0.5 ,verbose:bool=False) -> Sequence[Label]:
     '''
-    get all labels that the word the the fregment associated with
+    get all labels that the word the the fragment associated with
     set verbose=True for deatiled information of words in fragment and their labels
     '''
-    # TODO: Deal with lower/upper case
-    # TODO: Deal with Punctuations (such as `tree,` of `king?`)
-    #words = fregment.split().replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','')
-    labels = set()
-    temp = fregment.split()
-    words = [word.replace(',','').replace('.','').replace('?','').replace('!','').replace(':','').replace(';','') for word in temp]
-    for word in words:
-        for label in get_labels(word, threshold):
-            labels.add(label)
-    labels_list = list(labels)
-    labels_list.sort(key=lambda x:-x[1]) #sorting the list by the similarity
-    return labels_list[:7]
+    # apply the same rule as when generating the corpus for word2vec, see generate_corpus_and_model.py
+    fragment = re.sub('[^a-zA-Z0-9 \n]', '', fragment.lower())
+    words = fragment.split()
+    labels = [get_single_label_for_word(word, threshold) for word in words]
+    labels.sort(key=lambda x:-x[1]) # sorting the list by the similarity
+    # return a set to remove duplicates. Note that there could be more than 7 labels for a fragment,
+    # but less than 7 will be returned, if a label has high similarity for multiple word.
+    return list(set([label for label, _ in labels[:7]])) # return a set to avoid duplicates
     
 def convert_words_dict_to_vec_dict():
     '''
@@ -474,6 +470,27 @@ def calc_inner_product(vec1:np.array, vec2:np.array):
     Calculates the inner product between two vectors
     '''
     return np.dot(vec1,vec2)
+
+def get_avg_similarity(query: str, label: str):
+    sum_similarity = 0
+    word_count = 0
+    for word in words_dict[label]:
+        try:
+            sum_similarity += word_vectors.similarity(query, word)
+            word_count += 1
+        except KeyError:
+            pass
+    return sum_similarity / word_count if word_count > 0 else 0
+
+def get_single_label_for_word(word: str, threshold: float = 0.):
+    max_similarity = threshold
+    final_label = Label.NONE
+    for label in words_dict.keys():
+        similarity = get_avg_similarity(word, label)
+        if similarity > max_similarity:
+            max_similarity = similarity
+            final_label = Label[label]
+    return (final_label, max_similarity)
 
 def get_labels(word:str, thrashold:float=0.5):
     '''
