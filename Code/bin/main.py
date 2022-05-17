@@ -1,33 +1,19 @@
 import sys
-from typing import Optional, Sequence
+from typing import Sequence
 import numpy as np
 from pandas import DataFrame
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 
 from Utils.utils import split_on_condition
-from Labels.labels import Label, parse_fragment,convert_words_dict_to_vec_dict # TODO: verify parse_fragment
-from parsing.parse_csv import parse_all_csv_in_directory, is_labeled, convert_labels
+from Labels.labels import Label, parse_fragment
+from parsing.parse_csv import parse_all_csv_in_directory, is_labeled
 import datetime
-
-
 
 
 GRANULARITY = 1/10
 MIN_T = 5
 MAX_T = 10
-
-
-def mismatch(original:Sequence[Label],applied:Sequence[Label], miss_w=1.0,extra_w=1.0):
-    '''
-    compare two label-sets of a fragment. 
-    given 2 labels sequence (1 hand labeled and 1 by this  scripts):
-    count missing labels (labeled by hand and not by script) and added labels (labeled by script and not by hand)
-    sum them up with matching weights
-    '''
-    misses = [item for item in original if item not in applied]
-    extras = [item for item in applied if item not in original]
-    return miss_w*len(misses) + extra_w*len(extras)
 
 
 def label_plays(*,plays:Sequence[tuple[DataFrame,str]], threshold:float, verbose:bool=False)->None:
@@ -41,12 +27,9 @@ def label_plays(*,plays:Sequence[tuple[DataFrame,str]], threshold:float, verbose
         )
         if verbose:
             print(f"Done")
-        
 
              
 def check_labeling(plays:Sequence[tuple[DataFrame,str]], verbose:bool=False)->list[float]:
-    ## TODO FIXME: use actual performance function.
-    ## Instead of `loss()`
     ret_list = []
     for df,name in plays:
         if is_labeled(df):
@@ -66,8 +49,6 @@ def check_labeling(plays:Sequence[tuple[DataFrame,str]], verbose:bool=False)->li
     return ret_list
 
 
-
-
 def main():
     e = datetime.datetime.now()
     print (f'\nStarting  Run {e.strftime("%Y-%m-%d %H:%M:%S")}\n')
@@ -83,11 +64,6 @@ def main():
 
     e = datetime.datetime.now()
     print (f'\nFinishing Run {e.strftime("%Y-%m-%d %H:%M:%S")}\n')
-
-
-
-
-
 
 
 if __name__ == "__main__":
