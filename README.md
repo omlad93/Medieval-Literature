@@ -1,5 +1,5 @@
-# Medieval-Literature
-Topic Modeling Workshop: Medieval English Literature
+# Renaissance - Literature
+Topic Modeling Workshop: Renaissance English Literature
 Labeling Figurative Language In order to understand relations between topic in the medieval times.
 
 ## Kick off
