@@ -6,7 +6,7 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 import os
 import pandas as pd # type: ignore
 from pandas import DataFrame,Series
-from Labels.labels import Label, words_dict
+from labels.labels import Label, words_dict
 import pickle
 
 MISSING_LABELS :set[str] = set()
@@ -94,14 +94,9 @@ def unlabeled_topics():
 
 
 def main()->None:
-    # parse_single_csv("Data//csv//Macbeth.csv")
-    # parse_all_csv_in_directory("Data\csv",save=True)
     dfs,plays = zip(*parse_all_csv_in_directory("data\csv", save=True))
     print(f'Parsed {len(dfs)} CSV: {len([df for df in dfs if is_labeled(df)])} of them are for training:')
     print(f'\t {", ".join([play for df,play in zip(dfs,plays) if is_labeled(df)])}')
-    # for d,p in zip(dfs,plays):
-    #     print(p)
-    #     print(d)
     unlabeled_topics()
 
 if __name__ == "__main__":

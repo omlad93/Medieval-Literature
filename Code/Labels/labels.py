@@ -9,7 +9,7 @@ from difflib import get_close_matches
 import re
 import numpy as np
 from gensim.models import Word2Vec, KeyedVectors
-from Utils.utils import normalized_dot_product
+from utils.utils import normalized_dot_product
 
 
 
@@ -504,6 +504,15 @@ def convert_word_to_vec(word:str)->np.array:
         vec = np.zeros(5)
     return vec
 
+
+def labels_as_boolean(labels:list[Label])-> list[bool]:
+    return [
+        label in labels
+        for label in Label
+    ]
+
+
+
 def main()->None:
     convert_words_dict_to_vec_dict()
     #print(vec_dict)
@@ -512,6 +521,9 @@ def main()->None:
     print(labels_list)
     #labels_list = parse_fragment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
     # print(labels_list)
+
+
+
 
 if __name__ == '__main__':
     main()
