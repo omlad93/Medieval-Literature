@@ -5,8 +5,8 @@ from pandas import DataFrame
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 
-from Utils.utils import split_on_condition
-from Labels.labels import Label, parse_fragment,convert_words_dict_to_vec_dict # TODO: verify parse_fragment
+from utils.utils import split_on_condition
+from labels.labels import Label, parse_fragment,convert_words_dict_to_vec_dict # TODO: verify parse_fragment
 from parsing.parse_csv import parse_all_csv_in_directory, is_labeled, convert_labels
 import datetime
 

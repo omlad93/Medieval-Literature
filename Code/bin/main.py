@@ -1,4 +1,3 @@
-
 import sys
 from typing import Optional, Sequence
 from pathlib import Path
@@ -26,6 +25,7 @@ MODEL.to(DEVICE)
 OPTIMIZER = torch.optim.Adam(params = MODEL.parameters(), lr=LEARNING_RATE)
 
 def init_dual_dataframe():
+    ''' init Dataframes (1 for our case, one for example case''' 
     # The CSV from the online example had a column for each possible label
     csv_df = pd.read_csv("./ETC/train.csv",encoding='unicode_escape', keep_default_na=False)
     csv_df.drop(["id"], inplace=True,axis=1)
@@ -41,11 +41,14 @@ def init_dual_dataframe():
     template['labels'] = csv_df.iloc[:, 1:].values.tolist()
     return template,my_df
 
+            #  L1 L2 
+#  Fragment : [0  1   0 1 0 0 0 0 0 ... 0 1 ]
 
 def loader(df):
+    ''' Prepare Data '''
     tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', truncation=True, do_lower_case=True)
-    f = 0.8
-    trn_data = df.sample(frac=f, random_state=200)
+    f = 0.01
+    trn_data = df.sample(frac=f, random_state=200).reset_index(drop=True)
     tst_data = df.drop(trn_data.index).reset_index(drop=True)
     trn_set = MultiLabelDataset(trn_data,tokenizer,MAX_LEN)
     tst_set = MultiLabelDataset(tst_data,tokenizer,MAX_LEN)
@@ -58,9 +61,10 @@ def loader(df):
     return (trn_loader,tst_loader)
 
 def train(trn_loader):
+    ''' Train Data'''
     s,r = 0,0
     MODEL.train()
-    for i,(_, data) in enumerate(tqdm(enumerate(trn_loader,0))):
+    for _, data in tqdm(enumerate(trn_loader,0)):
             ids = data['ids'].to(DEVICE, dtype = torch.long)
             mask = data['mask'].to(DEVICE, dtype = torch.long)
             token_type_ids = data['token_type_ids'].to(DEVICE, dtype = torch.long)
@@ -74,20 +78,15 @@ def train(trn_loader):
             OPTIMIZER.step()
     print(f"Finished with Ratio = {100*r/s}%")
 
-def convert_dataset_to_tensor(dataset: tuple):
-    inputs = torch.tensor(dataset[0])
-    masks = torch.tensor(dataset[1])
-    labels = torch.tensor(dataset[2])
-    return inputs, masks, labels
-
 
 def main():
-    _, df = init_dual_dataframe()
-    # for i,df in enumerate(dfs):
-    trn_loader, tst_loader = loader(df)
-    convert_dataset_to_tensor(trn_loader)
-    # train(trn_loader)
-    print(f"Finished {i}")
+    print("hi")
+    dfs = init_dual_dataframe()
+    for i,df in enumerate(dfs):
+        trn_loader, tst_loader = loader(df)
+        train(trn_loader)
+        print(f"Finished {i}")
+    print("bye")
 
 
 
