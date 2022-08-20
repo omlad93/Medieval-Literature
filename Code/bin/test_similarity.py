@@ -9,8 +9,8 @@ from parso import parse
 from path import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 
-from utils.utils import split_on_condition
-from labels.labels import *
+from Utils.utils import split_on_condition
+from Labels.labels import *
 from parsing.parse_csv import parse_all_csv_in_directory, is_labeled, convert_labels
 from bin.main import check_labeling,label_plays
 

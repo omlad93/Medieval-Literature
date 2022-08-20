@@ -6,7 +6,7 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 import os
 import pandas as pd # type: ignore
 from pandas import DataFrame,Series
-from labels.labels import Label, words_dict
+from Labels.labels import Label, words_dict
 import pickle
 
 MISSING_LABELS :set[str] = set()
