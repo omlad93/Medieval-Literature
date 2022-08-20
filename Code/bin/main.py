@@ -18,8 +18,7 @@ from torch.utils.data import Dataset, DataLoader, RandomSampler, SequentialSampl
 import logging
 logging.basicConfig(level=logging.ERROR)
 
-# DEVICE = 'cuda' if cuda.is_available else 'cpu' # *UNCOMMENT this line when running on slurm*
-DEVICE='cpu'
+DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 MODEL = DistilBERT()
 MODEL.to(DEVICE)
 OPTIMIZER = torch.optim.Adam(params = MODEL.parameters(), lr=LEARNING_RATE)
