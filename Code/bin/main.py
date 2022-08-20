@@ -18,6 +18,7 @@ from torch.utils.data import Dataset, DataLoader, RandomSampler, SequentialSampl
 import logging
 logging.basicConfig(level=logging.ERROR)
 
+REPO_FOLDER = str(Path(__file__).parent.parent.parent)
 DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 MODEL = DistilBERT()
 MODEL.to(DEVICE)
@@ -28,7 +29,7 @@ def init_dual_dataframe():
     # The CSV from the online example had a column for each possible label
     # csv_df = pd.read_csv("./ETC/train.csv",encoding='unicode_escape', keep_default_na=False)
     # csv_df.drop(["id"], inplace=True,axis=1)
-    my_df = parse_single_csv("./data/csv/Macbeth.csv",slim=True)
+    my_df = parse_single_csv(f"{REPO_FOLDER}/Data/csv/Macbeth.csv",slim=True)
     my_df["Topics"]=my_df["Topics"].apply(labels_as_boolean)
     my_df.rename(columns={
         "Fragment":"text",
@@ -86,7 +87,7 @@ def main():
     trn_loader, tst_loader = loader(df)
     for epoch in range(EPOCHS):
         train_epoch(trn_loader)
-        print(f"Finished Epoch: {epoch}")
+        print(f"Finished Epoch: {epoch+1}")
     print(f"Finished")
     print("bye")
 

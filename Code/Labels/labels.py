@@ -8,7 +8,7 @@ from typing import Any, Optional, Sequence
 from difflib import get_close_matches
 import re
 import numpy as np
-from gensim.models import Word2Vec, KeyedVectors
+# from gensim.models import Word2Vec, KeyedVectors
 from Utils.utils import normalized_dot_product
 
 
@@ -237,7 +237,7 @@ words_dict : dict[str,set[str]] = {
     'WOMEN'                        : set(['woman', 'womans', 'dames', 'matrons', 'womanly', 'girl', 'shee', 'she', 'wench', 'wenches', 'wives', 'thence', 'the woman', 'mistris', 'Tullia', 'Nelly', 'sex', 'her', 'weomen', 'thou'])
 }
 
-word_vectors: KeyedVectors = KeyedVectors.load('code/model/word2vec/w2v-plays.wv')
+# word_vectors: KeyedVectors = KeyedVectors.load('code/model/word2vec/w2v-plays.wv')
 
 # AND or & were replaced by __
 # spaces are replaced by _
