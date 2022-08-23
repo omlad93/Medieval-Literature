@@ -24,6 +24,20 @@ MODEL = DistilBERT()
 MODEL.to(DEVICE)
 OPTIMIZER = torch.optim.Adam(params = MODEL.parameters(), lr=LEARNING_RATE)
 
+def calc_hamming_score(y_true, y_pred):
+    acc_list = []
+    for i in range(y_true.shape[0]):
+        set_true = set( np.where(y_true[i])[0] )
+        set_pred = set( np.where(y_pred[i])[0] )
+        tmp_a = None
+        if len(set_true) == 0 and len(set_pred) == 0:
+            tmp_a = 1
+        else:
+            tmp_a = len(set_true.intersection(set_pred))/\
+                    float( len(set_true.union(set_pred)) )
+        acc_list.append(tmp_a)
+    return np.mean(acc_list)
+
 def init_dual_dataframe():
     ''' init Dataframes (1 for our case, one for example case''' 
     # The CSV from the online example had a column for each possible label
@@ -65,6 +79,7 @@ def loader(df: DataFrame):
 def train_epoch(trn_loader):
     ''' Train Data'''
     # s,r = 0,0
+    loss = 0
     MODEL.train()
     for _, data in tqdm(enumerate(trn_loader,0)):
         ids = data['ids'].to(DEVICE, dtype = torch.long)
@@ -77,8 +92,27 @@ def train_epoch(trn_loader):
 
         loss.backward()
         OPTIMIZER.step()
+    return loss.item()
     # print(f"Finished with Ratio = {100*r/s}%")
 
+def evaluation(testing_loader):
+    MODEL.eval()
+    fin_targets=[]
+    fin_outputs=[]
+    with torch.no_grad():
+        for _, data in tqdm(enumerate(testing_loader, 0)):
+            ids = data['ids'].to(DEVICE, dtype = torch.long)
+            mask = data['mask'].to(DEVICE, dtype = torch.long)
+            targets = data['targets'].to(DEVICE, dtype = torch.float)
+            outputs = MODEL(ids, mask)
+            fin_targets.extend(targets.cpu().detach().numpy().tolist())
+            fin_outputs.extend(torch.sigmoid(outputs).cpu().detach().numpy().tolist())
+    fin_preds = (np.array(fin_outputs, dtype='f') >= 0.5).astype(float)
+    fin_targets = np.array(fin_targets)
+    hamming_loss = metrics.hamming_loss(fin_targets, fin_preds)
+    hamming_score = calc_hamming_score(fin_targets, fin_preds)
+    f1 = metrics.f1_score(fin_targets, fin_preds, average='micro')
+    return hamming_loss, hamming_score, f1
 
 def main():
     print("hi")
@@ -86,12 +120,10 @@ def main():
     # for i,df in enumerate(dfs):
     trn_loader, tst_loader = loader(df)
     for epoch in range(EPOCHS):
-        train_epoch(trn_loader)
-        print(f"Finished Epoch: {epoch+1}")
-    print(f"Finished")
-    print("bye")
-
-
+        loss = train_epoch(trn_loader)
+        print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
+    results = evaluation(tst_loader)
+    print(f"Test Hamming Score: {results[0]}, Hamming Loss: {results[1]}, F1: {results[2]}")
 
 if __name__ == "__main__":
     main()
