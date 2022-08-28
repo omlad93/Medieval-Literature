@@ -43,7 +43,7 @@ def init_dual_dataframe():
     # The CSV from the online example had a column for each possible label
     # csv_df = pd.read_csv("./ETC/train.csv",encoding='unicode_escape', keep_default_na=False)
     # csv_df.drop(["id"], inplace=True,axis=1)
-    my_df = parse_single_csv(f"{REPO_FOLDER}/Data/csv/Macbeth.csv",slim=True)
+    my_df = parse_single_csv(f"{REPO_FOLDER}/Data/csv/combined.csv",slim=True)
     my_df["Topics"]=my_df["Topics"].apply(labels_as_boolean)
     my_df.rename(columns={
         "Fragment":"text",
