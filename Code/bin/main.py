@@ -54,6 +54,7 @@ def init_dual_dataframe():
     # template['text'] = csv_df['comment_text']
     # template['labels'] = csv_df.iloc[:, 1:].values.tolist()
     # return template,my_df
+    print(my_df.head())
     return my_df
 
             #  L1 L2 
@@ -62,7 +63,7 @@ def init_dual_dataframe():
 def loader(df: DataFrame):
     print(len(df.index))
     ''' Prepare Data '''
-    f = 0.1
+    f = 0.2
     tst_data = df.sample(frac=f, random_state=200).reset_index(drop=True)
     trn_data = df.drop(tst_data.index).reset_index(drop=True)
     tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', truncation=True, do_lower_case=True)
@@ -122,8 +123,8 @@ def main():
     for epoch in range(EPOCHS):
         loss = train_epoch(trn_loader)
         print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
-    results = evaluation(tst_loader)
-    print(f"Test Hamming Score: {results[0]}, Hamming Loss: {results[1]}, F1: {results[2]}")
+        results = evaluation(tst_loader)
+        print(f"Test Hamming Loss: {results[0]}, Hamming Score: {results[1]}, F1: {results[2]}")
 
 if __name__ == "__main__":
     main()

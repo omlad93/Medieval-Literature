@@ -10,8 +10,8 @@ import logging
 logging.basicConfig(level=logging.ERROR)
 
 MAX_LEN = 256
-BATCH_SIZE = 8
-EPOCHS = 5
+BATCH_SIZE = 4
+EPOCHS = 3
 LEARNING_RATE = 1e-05
 
 class MultiLabelDataset(Dataset):
