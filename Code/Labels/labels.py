@@ -1,19 +1,23 @@
 from __future__ import annotations
 #from curses.ascii import NUL
 from enum import Enum,auto
+import gzip
 import sys
 from pathlib import Path
+
 sys.path.insert(0,str(Path(__file__).parent.parent))
 from typing import Any, Optional, Sequence
 from difflib import get_close_matches
 import re
+import pickle
 import numpy as np
 # from gensim.models import Word2Vec, KeyedVectors
-from Utils.utils import normalized_dot_product
+from utils.utils import normalized_dot_product
+from pandas import DataFrame,Series
 
 
+REPO = str(Path(__file__).parent.parent.parent)
 
-from pandas import array
 
 #vec_dict : dict[str:set(tuple(np.array,str))] = {}
 vec_dict : dict[str:set(tuple(np.array))] = {}
@@ -237,12 +241,6 @@ words_dict : dict[str,set[str]] = {
     'WOMEN'                        : set(['woman', 'womans', 'dames', 'matrons', 'womanly', 'girl', 'shee', 'she', 'wench', 'wenches', 'wives', 'thence', 'the woman', 'mistris', 'Tullia', 'Nelly', 'sex', 'her', 'weomen', 'thou'])
 }
 
-# word_vectors: KeyedVectors = KeyedVectors.load('code/model/word2vec/w2v-plays.wv')
-
-# AND or & were replaced by __
-# spaces are replaced by _
-# / replaced by ___
-
 class Label(Enum):
     ACCOMMODATION = auto()
     AGRICULTURE = auto()
@@ -252,7 +250,7 @@ class Label(Enum):
     ANATOMY = auto()
     ANIMALS = auto()
     ARCHITECTURE =  auto()
-    APPEARNCE = auto()
+    APPEARANCE = auto()
     ART = auto()
     ASTROLOGY = auto()
     ASSISTANCE = auto()
@@ -505,22 +503,47 @@ def convert_word_to_vec(word:str)->np.array:
     return vec
 
 
-def labels_as_boolean(labels:list[Label])-> list[bool]:
+def labels_as_boolean(labels:list[Label], options=Label)-> list[bool]:
+    retval = [label in labels for label in options]
     return [
         label in labels
+        for label in options
+    ]
+
+def labels_as_int(labels:list[Label])-> list[int]:
+    return [
+        1 if label in labels else 0
         for label in Label
     ]
 
 
+def words_dict_iterate():
+    for label, words in words_dict.items():
+        # Check if value is of dict type
+        if isinstance(words, set):
+            # If value is dict then iterate over all its values
+            for word in  words:
+                yield (word,label)
+        else:
+            # If value is not dict type then yield the value
+            yield (words,label)
+
+def labeled_words(options=Label)->None:
+    words,labels = zip(*words_dict_iterate())
+    boolean_labels = [labels_as_boolean([Label[label]],options) for label in labels]
+    df = DataFrame(
+        {
+            "text"   : words,
+            "labels" : boolean_labels
+        }
+    )
+    return df
+
+
 
 def main()->None:
-    convert_words_dict_to_vec_dict()
-    #print(vec_dict)
-    thrashold = 0.0
-    labels_list = parse_fragment('If a tree falls down in the forest and no one heared, did it still fell?',thrashold,verbose=True)
-    print(labels_list)
-    #labels_list = parse_fragment('Planted seed. Rooted? Grew apple!', verbose=True) #All From Agriculture
-    # print(labels_list)
+    labeled_words()
+
 
 
 

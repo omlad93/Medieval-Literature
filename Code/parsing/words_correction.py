@@ -9,7 +9,7 @@ from difflib import get_close_matches
 import re
 import numpy as np
 # from gensim.models import Word2Vec, KeyedVectors
-from Utils.utils import normalized_dot_product
+from utils.utils import normalized_dot_product
 
 correct_words_dict : dict[str,str] = {
     "lefte" : "left",
@@ -135,5 +135,12 @@ correct_words_dict : dict[str,str] = {
 
 
 def word_correction(src_word):
-    if src_word in correct_words_dict.keys(): return correct_words_dict[src_word]
+    if src_word in correct_words_dict.keys(): 
+        # print(f"fixed {src_word} -> {correct_words_dict[src_word]}")
+        return correct_words_dict[src_word]
     return src_word
+
+def rephrase(fragment):
+    for w in fragment.split():
+        fragment=fragment.replace(w,word_correction(w))
+    return fragment

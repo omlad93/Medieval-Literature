@@ -6,14 +6,15 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 import os
 import pandas as pd # type: ignore
 from pandas import DataFrame,Series
-from Labels.labels import Label, words_dict
+from labels.labels import Label, words_dict
+from parsing.words_correction import rephrase
 import pickle
 
 MISSING_LABELS :set[str] = set()
 
 def convert_labels(topic_list: list[str])->list[Label]:
     '''
-    A function to make Labels from Topics (strings)
+    A function to make Labels from labels (strings)
     '''
     for i,topic in enumerate(topic_list):
         label = Label.get_label(topic)
@@ -24,12 +25,12 @@ def convert_labels(topic_list: list[str])->list[Label]:
    
 def combine_topics(x:Series) -> list[str]:
     '''
-    A function to combine all Topics columns into a single column
+    A function to combine all labels columns into a single column
     '''
     topics = [c for c in x.index if 'Topic' in c]
     return convert_labels([x[topic] for topic in topics if x[topic] and x[topic].strip()])
         
-def parse_single_csv(path:str,slim:bool=True, save:bool=False,verbose:bool=False)->DataFrame:
+def parse_single_csv(path:str,slim:bool=True, save:bool=False,verbose:bool=False,fix_spelling:bool=False)->DataFrame:
     '''
     Takes a single CSV in agreed format (as supplied by Gilad) and return a dataframe
     set slim=True to narrow the dataframe to what is needed (fragments & labels)
@@ -40,9 +41,12 @@ def parse_single_csv(path:str,slim:bool=True, save:bool=False,verbose:bool=False
         print(f'Parsing {path}')
     df = pd.read_csv(path,encoding='unicode_escape', keep_default_na=False)
     if slim:
-        df.rename(columns={'Line':'Fragment'},inplace=True)
-        df['Topics'] = df.apply(combine_topics,axis=1)
-        df = df[[c for c in df.columns if c in {'Topics','Fragment'}]]  
+        if "Line" in df.columns:
+            df.rename(columns={'Line':'text'},inplace=True)
+        if "Fragment" in df.columns:
+            df.rename(columns={'Fragment':'text'},inplace=True)
+        df['labels'] = df.apply(combine_topics,axis=1)
+        df = df[[c for c in df.columns if c in {'labels','text'}]]  
     if save:
         pkl_path = path.replace(f'csv',f'pickle\\{"Labeled" if is_labeled(df) else "Empty"}')
         os.makedirs(os.path.dirname(pkl_path), exist_ok=True)
@@ -50,15 +54,17 @@ def parse_single_csv(path:str,slim:bool=True, save:bool=False,verbose:bool=False
             pickle.dump(df,pkl)
             if verbose:
                 print(f'\t Saved DataFrame as {pkl.name}')
+    if fix_spelling:
+        df['text'] = df['text'].apply(rephrase)
 
     return df
 
-def parse_all_csv_in_directory(dir_path:str,slim:bool=True,save:bool=False,verbose:bool=False)->Sequence[tuple[DataFrame,str]]:
+def parse_all_csv_in_directory(dir_path:str,slim:bool=True,save:bool=False,verbose:bool=False,fix_spelling:bool=False)->Sequence[tuple[DataFrame,str]]:
     '''
     Parse all CSVs in folder and return a sequence of tuples: (df,filename)
     '''
     return tuple(
-        (parse_single_csv(f'{dir_path}{os.sep}{file}',slim,save,verbose),file.split('.')[0])
+        (parse_single_csv(f'{dir_path}{os.sep}{file}',slim,save,verbose,fix_spelling),file.split('.')[0])
         for file in os.listdir(dir_path) if file.endswith('csv')
         )
 
@@ -73,15 +79,15 @@ def unpickle_dir(dir_path:str)->Sequence[tuple[DataFrame,str]]:
 
 def is_labeled(df:DataFrame)->bool:
     '''
-    Returns True if there are Topics mentioned for any fragment
+    Returns True if there are labels mentioned for any fragment
     '''
-    return any(df['Topics'])
+    return any(df['labels'])
 
 def is_for_filling(df:DataFrame)->bool:
     '''
-    Returns True if all of the Topics are blank
+    Returns True if all of the labels are blank
     '''
-    return not any(df['Topics'])
+    return not any(df['labels'])
 
 def unlabeled_topics():
     '''

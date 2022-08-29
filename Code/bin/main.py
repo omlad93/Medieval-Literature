@@ -1,10 +1,11 @@
+from lib2to3.pgen2.token import OP
 import sys
 from typing import Optional, Sequence
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 
 from parsing.parse_csv import *
-from Labels.labels import *
+from labels.labels import *
 from model.distil_bert import *
 import numpy as np
 import pandas as pd
@@ -20,9 +21,8 @@ logging.basicConfig(level=logging.ERROR)
 
 REPO_FOLDER = str(Path(__file__).parent.parent.parent)
 DEVICE = 'cuda' if cuda.is_available() else 'cpu'
-MODEL = DistilBERT()
-MODEL.to(DEVICE)
-OPTIMIZER = torch.optim.Adam(params = MODEL.parameters(), lr=LEARNING_RATE)
+MODEL       = None
+OPTIMIZER   = None
 
 def calc_hamming_score(y_true, y_pred):
     acc_list = []
@@ -38,31 +38,27 @@ def calc_hamming_score(y_true, y_pred):
         acc_list.append(tmp_a)
     return np.mean(acc_list)
 
-def init_dual_dataframe():
-    ''' init Dataframes (1 for our case, one for example case''' 
-    # The CSV from the online example had a column for each possible label
-    # csv_df = pd.read_csv("./ETC/train.csv",encoding='unicode_escape', keep_default_na=False)
-    # csv_df.drop(["id"], inplace=True,axis=1)
-    my_df = parse_single_csv(f"{REPO_FOLDER}/Data/csv/combined.csv",slim=True)
-    my_df["Topics"]=my_df["Topics"].apply(labels_as_boolean)
-    my_df.rename(columns={
-        "Fragment":"text",
-        "Topics":"labels"
-        }, inplace=True
-    )
-    # template = pd.DataFrame()
-    # template['text'] = csv_df['comment_text']
-    # template['labels'] = csv_df.iloc[:, 1:].values.tolist()
-    # return template,my_df
-    return my_df
+def init_data(labels_limit=None,fix_spelling:bool=False):
+    global MODEL
+    global OPTIMIZER
+    ''' init Dataframes (1 labels keywords , one for plays)''' 
+    # labeled_plays = parse_single_csv(f"{REPO_FOLDER}/data/csv/combined.csv",slim=True)
+    dfs,_ = zip(*parse_all_csv_in_directory("data\csv",fix_spelling=fix_spelling,save=False))
+    labeled_plays_df = pd.concat([df for df in dfs if is_labeled(df)], axis=0, ignore_index=True)
+    options = get_top_labels(labeled_plays_df,labels_limit)
+    classes = len(options) if labels_limit else len(Label)
+    labeled_plays_df["labels"]=labeled_plays_df["labels"].apply(lambda x: labels_as_boolean(x,options))
+    labeled_words_df = labeled_words(options)
+    # Model Init
+    MODEL = DistilBERT(classes=classes)
+    MODEL.to(DEVICE)
+    OPTIMIZER = torch.optim.Adam(params = MODEL.parameters(), lr=LEARNING_RATE)
+    return labeled_words_df,labeled_plays_df
 
-            #  L1 L2 
-#  Fragment : [0  1   0 1 0 0 0 0 0 ... 0 1 ]
 
-def loader(df: DataFrame):
-    print(len(df.index))
+def loader(df: DataFrame, f:int=0.1):
+    # print(len(df.index))
     ''' Prepare Data '''
-    f = 0.1
     tst_data = df.sample(frac=f, random_state=200).reset_index(drop=True)
     trn_data = df.drop(tst_data.index).reset_index(drop=True)
     tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', truncation=True, do_lower_case=True)
@@ -78,7 +74,6 @@ def loader(df: DataFrame):
 
 def train_epoch(trn_loader):
     ''' Train Data'''
-    # s,r = 0,0
     loss = 0
     MODEL.train()
     for _, data in tqdm(enumerate(trn_loader,0)):
@@ -93,7 +88,6 @@ def train_epoch(trn_loader):
         loss.backward()
         OPTIMIZER.step()
     return loss.item()
-    # print(f"Finished with Ratio = {100*r/s}%")
 
 def evaluation(testing_loader):
     MODEL.eval()
@@ -114,15 +108,30 @@ def evaluation(testing_loader):
     f1 = metrics.f1_score(fin_targets, fin_preds, average='micro')
     return hamming_loss, hamming_score, f1
 
+
+def get_top_labels(df:pd.DataFrame,top:int=10):
+    if top:
+        rates = [0 for label in Label]
+        for current_labeling in df.labels:
+            rates = [ ri+ci for ri,ci in zip(rates, labels_as_int(current_labeling)) ]
+        rated_labels = {label:rates[i] for i,label in enumerate(Label) }
+        top_labels = {
+            label:rated_labels[label]
+            for label in sorted(rated_labels.keys(), key=lambda x:-rated_labels[x])[:top]
+        }
+        return list(top_labels.keys())
+    return Label
+    
+
 def main():
-    print("hi")
-    df = init_dual_dataframe()
-    # for i,df in enumerate(dfs):
-    trn_loader, tst_loader = loader(df)
-    for epoch in range(EPOCHS):
-        loss = train_epoch(trn_loader)
-        print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
-    results = evaluation(tst_loader)
+    dfs = init_data(labels_limit=10,fix_spelling=True)
+    # dfs = init_data() # NO LIMIT
+    for i,df in enumerate(dfs):
+        trn_loader, tst_loader = loader(df, f=0.1 if i else 1/len(df))
+        for epoch in range(EPOCHS):
+            loss = train_epoch(trn_loader)
+            print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
+        results = evaluation(tst_loader)
     print(f"Test Hamming Score: {results[0]}, Hamming Loss: {results[1]}, F1: {results[2]}")
 
 if __name__ == "__main__":

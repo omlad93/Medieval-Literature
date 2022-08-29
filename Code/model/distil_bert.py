@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent.parent))
 from parsing.parse_csv import *
-from Labels.labels import *
+from labels.labels import *
 from transformers import DistilBertTokenizer, DistilBertModel
 import torch
 from torch.utils.data import Dataset
@@ -49,12 +49,12 @@ class MultiLabelDataset(Dataset):
 
 
 class DistilBERT(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, classes):
         super(DistilBERT, self).__init__()
         self.l1 = DistilBertModel.from_pretrained("distilbert-base-uncased")
         self.pre_classifier = torch.nn.Linear(768, 768)
         self.dropout = torch.nn.Dropout(0.1)
-        self.classifier = torch.nn.Linear(768, 104)
+        self.classifier = torch.nn.Linear(768, classes)
 
     def forward(self, input_ids, attention_mask):
         output_1 = self.l1(input_ids=input_ids, attention_mask=attention_mask)
