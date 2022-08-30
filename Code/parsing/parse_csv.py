@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -22,7 +23,7 @@ def convert_labels(topic_list: list[str])->list[Label]:
         topic_list[i] = label
     return topic_list
    
-def combine_topics(x:Series) -> list[str]:
+def combine_topics(x:Series) -> list[Label]:
     '''
     A function to combine all Topics columns into a single column
     '''
@@ -98,6 +99,62 @@ def main()->None:
     print(f'Parsed {len(dfs)} CSV: {len([df for df in dfs if is_labeled(df)])} of them are for training:')
     print(f'\t {", ".join([play for df,play in zip(dfs,plays) if is_labeled(df)])}')
     unlabeled_topics()
+
+def get_label_for_word(word: str, allowed_labels: list[Label]) -> Label:
+    for label in allowed_labels:
+        words_for_label = set([re.sub(r'\W+', '', x.lower()) for x in words_dict[label.name]])
+        if word in words_for_label:
+           return label
+    return Label.NONE
+
+def get_tokens(x: Series)->str:
+    labels = combine_topics(x)
+    current_index = 1
+    words: list[str] = [word.lower() for word in x['text'].split()]
+    tokens: list[str] = x['Tags'].split()
+    if len(words) != len(tokens):
+        print(f"error: {x}")
+        return ''
+    i = 0
+    while i < len(words):
+        word = re.sub(r'\W+', '', words[i])
+        if tokens[i] == '1':
+            also_set_next = False
+            if i < len(words) - 1 and words[i+1][0] == '[' and tokens[i+1] == '1':
+                word = re.sub(r'\W+', '', words[i+1])
+                also_set_next = True
+            label = get_label_for_word(word, labels[:current_index])
+            if label == Label.NONE:
+                tokens[i] = labels[current_index - 1].name
+                if also_set_next:
+                    also_set_next = False
+                    label = get_label_for_word(re.sub(r'\W+', '', words[i]), labels[:current_index])
+                    if label != Label.NONE:
+                        tokens[i] = label.name
+                # print(f"couldn't get label for word: {word}")        
+            else:
+                tokens[i] = label.name
+            if also_set_next:
+                tokens[i+1] = tokens[i]
+                i += 1
+            if current_index < len(labels) and label == labels[current_index - 1]:
+                current_index += 1
+        i += 1
+    return " ".join(tokens)
+
+
+def parse_csv_erez(path:str)->DataFrame:
+    '''
+    Takes a single CSV in agreed format (as supplied by Gilad) and return a dataframe
+    set slim=True to narrow the dataframe to what is needed (fragments & labels)
+    set save=True to save a pickle of the dataframe to Data/pickle
+    set verbose=True for informative printing
+    '''
+    df = pd.read_csv(path,encoding='unicode_escape', keep_default_na=False)
+    df.rename(columns={'Fragment':'text'},inplace=True)
+    df['labels'] = df.apply(get_tokens,axis=1)
+    df = df[[c for c in df.columns if c in {'text','labels'}]]  
+    return df
 
 if __name__ == "__main__":
     main()
