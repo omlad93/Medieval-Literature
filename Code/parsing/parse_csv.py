@@ -108,7 +108,7 @@ def get_label_for_word(word: str, allowed_labels: list[Label]) -> Label:
     return Label.NONE
 
 def get_tokens(x: Series)->str:
-    labels = combine_topics(x)
+    labels = x['topics']
     current_index = 1
     words: list[str] = [word.lower() for word in x['text'].split()]
     tokens: list[str] = x['Tags'].split()
@@ -142,7 +142,6 @@ def get_tokens(x: Series)->str:
         i += 1
     return " ".join(tokens)
 
-
 def parse_csv_token_classification(path: str)->DataFrame:
     '''
     Takes a single CSV in agreed format (as supplied by Gilad) and return a dataframe
@@ -152,9 +151,17 @@ def parse_csv_token_classification(path: str)->DataFrame:
     '''
     df = pd.read_csv(path,encoding='unicode_escape', keep_default_na=False)
     df.rename(columns={'Fragment':'text'},inplace=True)
+    df['topics'] = df.apply(combine_topics,axis=1)
     df['labels'] = df.apply(get_tokens,axis=1)
-    df = df[[c for c in df.columns if c in {'text','labels'}]]  
+    df = df[[c for c in df.columns if c in {'text','labels','topics'}]]  
     return df
+
+def intersect_labels(current_labels: list[Label], allowed_labels: set[str]):
+    current_set = set([label.name for label in current_labels])
+    return len(current_set.intersection(allowed_labels))
+
+def filter_ignored_labels(df: DataFrame, labels_set: set[str]):
+    return df[df['topics'].map(lambda x: intersect_labels(x, labels_set)) > 0].reset_index(drop=True)
 
 if __name__ == "__main__":
     main()

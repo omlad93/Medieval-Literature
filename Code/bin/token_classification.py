@@ -30,7 +30,7 @@ def init_dataframe():
     return my_df
 
 def loader(df: DataFrame, default_label, tag2idx):
-    print(len(df.index))
+    print(f"Total Fragments: {len(df.index)}")
     ''' Prepare Data '''
     f = 0.2
     tst_data = df.sample(frac=f, random_state=200).reset_index(drop=True)
@@ -92,19 +92,24 @@ def evaluation(testing_loader):
 
 def main():
     print("hi")
-    df = init_dataframe()
-    tag2idx, idx2tag, default_label, unique_tags = tags_mapping(df["labels"], 0)
-    trn_loader, tst_loader = loader(df, default_label, tag2idx)
-    global model, optimizer, num_labels
-    num_labels = len(unique_tags)
-    model = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels=num_labels)
-    model.to(DEVICE)
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
-    for epoch in range(EPOCHS):
-        loss = train_epoch(trn_loader)
-        print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
-        results = evaluation(tst_loader)
-        print(f"Test Accuracy: {results[0]}, F1: {results[1]}")
+    original_df = init_dataframe()
+    for threshold in [10, 20, 30]:
+        print(f"Threshold: {threshold}")
+        tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"], threshold)
+        df = filter_ignored_labels(original_df, unique_tags.keys())
+        trn_loader, tst_loader = loader(df, default_label, tag2idx)
+        global model, optimizer, num_labels
+        num_labels = len(unique_tags)
+        print(f"Labels Count: {num_labels}")
+        model = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels=num_labels)
+        model.to(DEVICE)
+        optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
+        
+        for epoch in range(EPOCHS):
+            loss = train_epoch(trn_loader)
+            print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
+            results = evaluation(tst_loader)
+            print(f"Test Accuracy: {results[0]}, F1: {results[1]}")
 
 if __name__ == "__main__":
     main()
