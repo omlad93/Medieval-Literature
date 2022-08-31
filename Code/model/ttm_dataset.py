@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset
 
 MAX_LEN = 256
-BATCH_SIZE = 4
+BATCH_SIZE = 16
 INSTANCE_THRESHOLD = 25
 
 tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased', truncation=True, do_lower_case=True)
@@ -27,9 +27,12 @@ def tags_mapping(tags_series: pd.Series, threshold=INSTANCE_THRESHOLD):
       else:
         unique_tags[tag] = 1
   
+  tags_to_remove = []
   for tag, instances in unique_tags.items():
     if instances < threshold:
-      unique_tags.pop(tag)
+      tags_to_remove.append(tag)
+  for tag in tags_to_remove:
+    unique_tags.pop(tag)
 
   tag2idx = {k:v for v,k in enumerate(sorted(unique_tags.keys()))}
   idx2tag = {k:v for v,k in tag2idx.items()}
