@@ -20,23 +20,22 @@ DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 
 LEARNING_RATE = 5e-5
 EPOCHS = 10
-MODEL = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels = 104)
-MODEL.to(DEVICE)
-OPTIMIZER = torch.optim.Adam(params = MODEL.parameters(), lr=LEARNING_RATE)
+model: DistilBertForTokenClassification
+optimizer: torch.optim.Adam
 
 def init_dataframe():
-    my_df = parse_csv_erez(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv")
+    my_df = parse_csv_token_classification(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv")
     # print(my_df.head())
     return my_df
 
-def loader(df: DataFrame):
+def loader(df: DataFrame, default_label, tag2idx):
     print(len(df.index))
     ''' Prepare Data '''
     f = 0.2
     tst_data = df.sample(frac=f, random_state=200).reset_index(drop=True)
     trn_data = df.drop(tst_data.index).reset_index(drop=True)
-    trn_set = TTMDataset(trn_data)
-    tst_set = TTMDataset(tst_data)
+    trn_set = TTMDataset(trn_data, default_label, tag2idx)
+    tst_set = TTMDataset(tst_data, default_label, tag2idx)
     loader_params = {'batch_size': BATCH_SIZE,
                 'shuffle': True,
                 'num_workers': 0
@@ -50,16 +49,15 @@ def train_epoch(trn_loader):
     total_loss = 0
     steps = 0
     loss_func = torch.nn.CrossEntropyLoss()
-    MODEL.train()
+    model.train()
     for tokens, labels in tqdm(trn_loader):
         labels = labels.to(DEVICE)
         # squeeze in order to match the sizes. From [batch,1,seq_len] --> [batch,seq_len] 
         mask = tokens['attention_mask'].squeeze(1).to(DEVICE)
         ids = tokens['input_ids'].squeeze(1).to(DEVICE)
 
-        OPTIMIZER.zero_grad()
-        # output = MODEL(ids, mask, labels)
-        logits = MODEL(ids, mask).logits
+        optimizer.zero_grad()
+        logits = model(ids, mask).logits
         active_loss = mask.view(-1) == 1
         active_logits = logits.view(-1, 104)
         active_labels = torch.where(
@@ -68,12 +66,12 @@ def train_epoch(trn_loader):
         loss = loss_func(active_logits, active_labels)
         total_loss += loss.item()
         loss.backward()
-        OPTIMIZER.step()
+        optimizer.step()
         steps += 1
     return total_loss / steps
 
 def evaluation(testing_loader):
-    MODEL.eval()
+    model.eval()
     fin_targets=[]
     fin_preds=[]
     with torch.no_grad():
@@ -82,7 +80,7 @@ def evaluation(testing_loader):
             # squeeze in order to match the sizes. From [batch,1,seq_len] --> [batch,seq_len] 
             mask = tokens['attention_mask'].squeeze(1).to(DEVICE)
             ids = tokens['input_ids'].squeeze(1).to(DEVICE)
-            logits = MODEL(ids, mask).logits
+            logits = model(ids, mask).logits
             predictions = logits.argmax(dim=-1)
             active = (mask.view(-1) == 1).to("cpu").numpy()
             fin_targets.extend(labels.cpu().detach().numpy().flatten()[active])
@@ -94,7 +92,10 @@ def evaluation(testing_loader):
 def main():
     print("hi")
     df = init_dataframe()
-    trn_loader, tst_loader = loader(df)
+    tag2idx, idx2tag, default_label, unique_tags = tags_mapping(df["labels"])
+    trn_loader, tst_loader = loader(df, default_label, tag2idx)
+    model = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels = len(unique_tags))
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
     for epoch in range(EPOCHS):
         loss = train_epoch(trn_loader)
         print(f"Finished Epoch: {epoch+1}, Loss: {loss}")

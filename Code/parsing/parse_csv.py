@@ -143,7 +143,7 @@ def get_tokens(x: Series)->str:
     return " ".join(tokens)
 
 
-def parse_csv_erez(path:str)->DataFrame:
+def parse_csv_token_classification(path: str)->DataFrame:
     '''
     Takes a single CSV in agreed format (as supplied by Gilad) and return a dataframe
     set slim=True to narrow the dataframe to what is needed (fragments & labels)

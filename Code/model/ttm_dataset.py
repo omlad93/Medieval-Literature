@@ -5,10 +5,11 @@ from torch.utils.data import Dataset
 
 MAX_LEN = 256
 BATCH_SIZE = 4
+INSTANCE_THRESHOLD = 25
 
 tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased', truncation=True, do_lower_case=True)
 
-def tags_mapping(tags_series: pd.Series):
+def tags_mapping(tags_series: pd.Series, threshold=INSTANCE_THRESHOLD):
   """
   tag_series = df column with tags for each sentence.
   Returns:
@@ -17,14 +18,20 @@ def tags_mapping(tags_series: pd.Series):
     - The label corresponding to tag '0'
     - A set of unique tags ecountered in the trainind df, this will define the classifier dimension
   """
-  unique_tags = set()
+  unique_tags = {}
   
   for tag_mask in tags_series.to_list():
     for tag in tag_mask.split():
-      unique_tags.add(tag)
+      if tag in unique_tags:
+        unique_tags[tag] += 1
+      else:
+        unique_tags[tag] = 1
+  
+  for tag, instances in unique_tags.items():
+    if instances < threshold:
+      unique_tags.pop(tag)
 
-
-  tag2idx = {k:v for v,k in enumerate(sorted(unique_tags))}
+  tag2idx = {k:v for v,k in enumerate(sorted(unique_tags.keys()))}
   idx2tag = {k:v for v,k in tag2idx.items()}
 
   unseen_label = tag2idx["0"]
@@ -53,7 +60,7 @@ class TTMDataset(Dataset):
    - df : dataframe with columns [text, labels]
   """
   
-  def __init__(self, df):
+  def __init__(self, df, default_label, tag2idx):
     if not isinstance(df, pd.DataFrame):
       raise TypeError('Input should be a dataframe')
     
@@ -62,12 +69,8 @@ class TTMDataset(Dataset):
 
     tags_list = [i.split() for i in df["labels"].values.tolist()]
     texts = df["text"].values.tolist()
-
-    tag2idx, _1, default_label, num_labels = tags_mapping(df["labels"])
     self.texts = [tokenizer(text, padding = "max_length", max_length=MAX_LEN, truncation = True, return_tensors = "pt") for text in texts]
     self.labels = [match_tokens_labels(text, tags, tag2idx, default_label) for text,tags in zip(self.texts, tags_list)]
-    self.num_labels = len(num_labels)
-    print(self.num_labels)
 
   def __len__(self):
     return len(self.labels)
