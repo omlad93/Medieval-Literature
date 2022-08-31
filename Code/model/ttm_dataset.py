@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset
 
 MAX_LEN = 256
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 INSTANCE_THRESHOLD = 25
 
 tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased', truncation=True, do_lower_case=True)

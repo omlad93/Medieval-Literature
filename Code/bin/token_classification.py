@@ -18,10 +18,11 @@ logging.basicConfig(level=logging.ERROR)
 REPO_FOLDER = str(Path(__file__).parent.parent.parent)
 DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 
-LEARNING_RATE = 5e-5
-EPOCHS = 10
+LEARNING_RATE = 1e-4
+EPOCHS = 5
 model: DistilBertForTokenClassification
 optimizer: torch.optim.Adam
+num_labels: int
 
 def init_dataframe():
     my_df = parse_csv_token_classification(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv")
@@ -59,7 +60,7 @@ def train_epoch(trn_loader):
         optimizer.zero_grad()
         logits = model(ids, mask).logits
         active_loss = mask.view(-1) == 1
-        active_logits = logits.view(-1, 104)
+        active_logits = logits.view(-1, num_labels)
         active_labels = torch.where(
             active_loss, labels.view(-1), torch.tensor(loss_func.ignore_index).type_as(labels)
         )
@@ -94,8 +95,10 @@ def main():
     df = init_dataframe()
     tag2idx, idx2tag, default_label, unique_tags = tags_mapping(df["labels"], 0)
     trn_loader, tst_loader = loader(df, default_label, tag2idx)
-    global model, optimizer
-    model = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels = len(unique_tags))
+    global model, optimizer, num_labels
+    num_labels = len(unique_tags)
+    model = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels=num_labels)
+    model.to(DEVICE)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
     for epoch in range(EPOCHS):
         loss = train_epoch(trn_loader)

@@ -1,0 +1,11 @@
+#! /bin/sh
+#SBATCH --job-name=token_classification
+#SBATCH --output=./token_classification.out
+#SBATCH --error=./token_classification.err
+#SBATCH --partition=studentbatch
+#SBATCH --time=1-0:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --nodelist=s-002
+#SBATCH --gpus=2
+python token_classification.py
