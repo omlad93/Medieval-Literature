@@ -94,6 +94,7 @@ def main():
     df = init_dataframe()
     tag2idx, idx2tag, default_label, unique_tags = tags_mapping(df["labels"], 0)
     trn_loader, tst_loader = loader(df, default_label, tag2idx)
+    global model, optimizer
     model = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels = len(unique_tags))
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
     for epoch in range(EPOCHS):
