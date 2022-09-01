@@ -1,15 +1,47 @@
+import numpy as np
 import pandas as pd
 from transformers import AutoTokenizer
 import torch
 from torch.utils.data import Dataset
+from matplotlib import pyplot as plt
 
 MAX_LEN = 256
 BATCH_SIZE = 8
-INSTANCE_THRESHOLD = 25
+INSTANCE_THRESHOLD = 0
 
 tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased', truncation=True, do_lower_case=True)
 
-def tags_mapping(tags_series: pd.Series, threshold=INSTANCE_THRESHOLD):
+def draw_charts(data: dict[str, int], histogram=True):
+  labels = []
+  instances = []
+  for key, value in data.items():
+    if key != "0":
+      labels.append(key)
+      instances.append(value)
+  if histogram:
+    bins = np.arange(0, np.ceil(max(instances) / 10.0) * 10 + 10, 10)
+    plt.hist(instances, bins=bins, edgecolor='black', linewidth=1)
+    plt.xticks(np.arange(0, bins[-1], 50))
+    plt.xlim(left=0)
+    plt.title('Labels Frequency Distribution')
+    plt.xlabel('Instances')
+    plt.ylabel('No. of labels')
+  else:
+    plt.rcdefaults()
+    fig, ax = plt.subplots()
+    y_pos = np.arange(len(labels))
+    ax.barh(y_pos, instances, align='center', color='maroon')
+    ax.margins(y=0.01)
+    ax.set_yticks(y_pos, labels=labels, fontsize=3)
+    ax.invert_yaxis() # labels read top-to-bottom
+    # Add annotation to bars
+    for i in ax.patches:
+      plt.text(i.get_width()+0.2, i.get_y()+0.8, str(i.get_width()), fontsize=3)
+    ax.set_xlabel('No. of instances in data')
+    ax.set_title('Labels in Dataset')
+  plt.show()
+
+def tags_mapping(tags_series: pd.Series, threshold=INSTANCE_THRESHOLD, show_charts=False):
   """
   tag_series = df column with tags for each sentence.
   Returns:
@@ -36,8 +68,10 @@ def tags_mapping(tags_series: pd.Series, threshold=INSTANCE_THRESHOLD):
 
   tag2idx = {k:v for v,k in enumerate(sorted(unique_tags.keys()))}
   idx2tag = {k:v for v,k in tag2idx.items()}
-
   unseen_label = tag2idx["0"]
+
+  if show_charts:
+    draw_charts(unique_tags, False)
 
   return tag2idx, idx2tag, unseen_label, unique_tags
 
@@ -74,6 +108,7 @@ class TTMDataset(Dataset):
     texts = df["text"].values.tolist()
     self.texts = [tokenizer(text, padding = "max_length", max_length=MAX_LEN, truncation = True, return_tensors = "pt") for text in texts]
     self.labels = [match_tokens_labels(text, tags, tag2idx, default_label) for text,tags in zip(self.texts, tags_list)]
+    self.unique_labels = set(np.array(self.labels).flatten())
 
   def __len__(self):
     return len(self.labels)

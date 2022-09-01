@@ -5,21 +5,19 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 from parsing.parse_csv import *
 from Labels.labels import *
 from model.ttm_dataset import *
-import numpy as np
 from tqdm import tqdm
 from sklearn import metrics
 from transformers import DistilBertForTokenClassification
 import torch
 from torch import cuda
 from torch.utils.data import DataLoader
-import logging
-logging.basicConfig(level=logging.ERROR)
+from functools import cmp_to_key
 
 REPO_FOLDER = str(Path(__file__).parent.parent.parent)
 DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 
 LEARNING_RATE = 1e-4
-EPOCHS = 5
+EPOCHS = 1
 model: DistilBertForTokenClassification
 optimizer: torch.optim.Adam
 num_labels: int
@@ -43,7 +41,7 @@ def loader(df: DataFrame, default_label, tag2idx):
                 }
     trn_loader = DataLoader(trn_set, **loader_params)
     tst_loader = DataLoader(tst_set, **loader_params)
-    return (trn_loader,tst_loader)
+    return (trn_loader, trn_set.unique_labels, tst_loader, tst_set.unique_labels)
 
 def train_epoch(trn_loader):
     ''' Train Data'''
@@ -88,28 +86,36 @@ def evaluation(testing_loader):
             fin_preds.extend(predictions.to("cpu").numpy().flatten()[active])
     accuracy = metrics.accuracy_score(fin_targets, fin_preds)
     f1 = metrics.f1_score(fin_targets, fin_preds, average='weighted')
-    return accuracy, f1
+    return accuracy, f1, fin_targets, fin_preds
+
+def draw_confusion_matrix(y_true, y_preds, sorted_labels):
+    metrics.ConfusionMatrixDisplay.from_predictions(y_true, y_preds, normalize='true', xticks_rotation='vertical')
+    # fig, ax = plt.subplots()
+    # ax.tick_params(axis='both', labelsize=3)
+    plt.show()
 
 def main():
     print("hi")
     original_df = init_dataframe()
-    for threshold in [10, 20, 30]:
-        print(f"Threshold: {threshold}")
-        tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"], threshold)
-        df = filter_ignored_labels(original_df, unique_tags.keys())
-        trn_loader, tst_loader = loader(df, default_label, tag2idx)
-        global model, optimizer, num_labels
-        num_labels = len(unique_tags)
-        print(f"Labels Count: {num_labels}")
-        model = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels=num_labels)
-        model.to(DEVICE)
-        optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
-        
-        for epoch in range(EPOCHS):
-            loss = train_epoch(trn_loader)
-            print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
-            results = evaluation(tst_loader)
-            print(f"Test Accuracy: {results[0]}, F1: {results[1]}")
+    tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"])
+    # df = filter_ignored_labels(original_df, unique_tags.keys())
+    trn_loader, trn_labels, tst_loader, tst_labels = loader(original_df, default_label, tag2idx)
+    trn_labels = sorted([idx2tag[x] for x in trn_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
+    tst_labels = sorted([idx2tag[x] for x in tst_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
+
+    global model, optimizer, num_labels
+    num_labels = len(unique_tags)
+    model = DistilBertForTokenClassification.from_pretrained("distilbert-base-uncased", num_labels=num_labels)
+    model.to(DEVICE)
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
+    
+    for epoch in range(EPOCHS):
+        # loss = train_epoch(trn_loader)
+        # print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
+        results = evaluation(tst_loader)
+        print(f"Test Accuracy: {results[0]}, F1: {results[1]}")
+        if epoch == EPOCHS - 1:
+            draw_confusion_matrix([idx2tag[x] for x in results[2]], [idx2tag[x] for x in results[3]], tst_labels)
 
 if __name__ == "__main__":
     main()
