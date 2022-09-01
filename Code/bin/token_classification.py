@@ -22,11 +22,6 @@ model: DistilBertForTokenClassification
 optimizer: torch.optim.Adam
 num_labels: int
 
-def init_dataframe():
-    my_df = parse_csv_token_classification(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv")
-    # print(my_df.head())
-    return my_df
-
 def loader(df: DataFrame, default_label, tag2idx):
     print(f"Total Fragments: {len(df.index)}")
     ''' Prepare Data '''
@@ -126,7 +121,7 @@ def draw_confusion_matrix(y_true, y_preds, sorted_labels):
 
 def main():
     print("hi")
-    original_df = init_dataframe()
+    original_df = parse_csv_token_classification(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv", fix_spelling=True)
     tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"])
     # df = filter_ignored_labels(original_df, unique_tags.keys())
     trn_loader, trn_labels, tst_loader, tst_labels = loader(original_df, default_label, tag2idx)

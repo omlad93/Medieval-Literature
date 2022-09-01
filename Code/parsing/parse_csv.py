@@ -7,8 +7,9 @@ sys.path.insert(0,str(Path(__file__).parent.parent))
 import os
 import pandas as pd # type: ignore
 from pandas import DataFrame,Series
-from Labels.labels import Label, words_dict
 import pickle
+from Labels.labels import Label, words_dict
+from word_corrections import rephrase
 
 MISSING_LABELS :set[str] = set()
 
@@ -142,7 +143,7 @@ def get_tokens(x: Series)->str:
         i += 1
     return " ".join(tokens)
 
-def parse_csv_token_classification(path: str)->DataFrame:
+def parse_csv_token_classification(path: str, fix_spelling=False)->DataFrame:
     '''
     Takes a single CSV in agreed format (as supplied by Gilad) and return a dataframe
     set slim=True to narrow the dataframe to what is needed (fragments & labels)
@@ -151,6 +152,8 @@ def parse_csv_token_classification(path: str)->DataFrame:
     '''
     df = pd.read_csv(path,encoding='unicode_escape', keep_default_na=False)
     df.rename(columns={'Fragment':'text'},inplace=True)
+    if fix_spelling:
+        df['text'] = df['text'].apply(rephrase)
     df['topics'] = df.apply(combine_topics,axis=1)
     df['labels'] = df.apply(get_tokens,axis=1)
     df = df[[c for c in df.columns if c in {'text','labels','topics'}]]  
