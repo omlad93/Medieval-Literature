@@ -89,10 +89,40 @@ def evaluation(testing_loader):
     return accuracy, f1, fin_targets, fin_preds
 
 def draw_confusion_matrix(y_true, y_preds, sorted_labels):
-    metrics.ConfusionMatrixDisplay.from_predictions(y_true, y_preds, normalize='true', xticks_rotation='vertical')
-    # fig, ax = plt.subplots()
-    # ax.tick_params(axis='both', labelsize=3)
-    plt.show()
+    fig, ax = plt.subplots(figsize=(16,16))
+    ax.tick_params(axis='both', labelsize=4)
+    metrics.ConfusionMatrixDisplay.from_predictions(
+        y_true,
+        y_preds,
+        normalize='true',
+        xticks_rotation='vertical',
+        include_values=False,
+        cmap=plt.cm.Blues,
+        ax=ax)
+    plt.savefig('all_labels.png')
+    ax.cla()
+    ax.tick_params(axis='both', labelsize=10)
+    metrics.ConfusionMatrixDisplay.from_predictions(
+        y_true,
+        y_preds,
+        labels=sorted_labels[-15:],
+        normalize='true',
+        xticks_rotation='vertical',
+        colorbar=False,
+        cmap=plt.cm.Blues,
+        ax=ax)
+    plt.savefig('top_labels.png')
+    ax.cla()
+    metrics.ConfusionMatrixDisplay.from_predictions(
+        y_true,
+        y_preds,
+        labels=sorted_labels[:14] + ["0"],
+        normalize='true',
+        xticks_rotation='vertical',
+        colorbar=False,
+        cmap=plt.cm.Blues,
+        ax=ax)
+    plt.savefig('bottom_labels.png')
 
 def main():
     print("hi")

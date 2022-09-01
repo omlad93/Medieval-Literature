@@ -11,3 +11,6 @@ ENV/
 env.bak/
 venv.bak/
 Code/bin/run.slurm
+all_labels.png
+bottom_labels.png
+top_labels.png
