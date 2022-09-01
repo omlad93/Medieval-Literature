@@ -9,7 +9,7 @@ import pandas as pd # type: ignore
 from pandas import DataFrame,Series
 import pickle
 from Labels.labels import Label, words_dict
-from word_corrections import rephrase
+from parsing.word_corrections import rephrase
 
 MISSING_LABELS :set[str] = set()
 
