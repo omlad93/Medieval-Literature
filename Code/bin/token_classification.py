@@ -134,13 +134,18 @@ def main():
     model.to(DEVICE)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
     
+    best_f1, best_acc = 0, 0
     for epoch in range(EPOCHS):
         loss = train_epoch(trn_loader)
         print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
-        results = evaluation(tst_loader)
-        print(f"Test Accuracy: {results[0]}, F1: {results[1]}")
+        acc, f1, y_true, y_pred = evaluation(tst_loader)
+        print(f"Test Accuracy: {acc}, F1: {f1}")
+        if f1 > best_f1 and (acc > best_acc or best_acc - acc < 0.01):
+            best_f1 = f1
+            best_acc = acc
+            torch.save(model.state_dict(), f"{REPO_FOLDER}/trained_models/token_classification_word_corrections.pt")
         if epoch == EPOCHS - 1:
-            draw_confusion_matrix([idx2tag[x] for x in results[2]], [idx2tag[x] for x in results[3]], tst_labels)
+            draw_confusion_matrix([idx2tag[x] for x in y_true], [idx2tag[x] for x in y_pred], tst_labels)
 
 if __name__ == "__main__":
     main()
