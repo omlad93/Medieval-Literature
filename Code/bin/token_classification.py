@@ -17,7 +17,7 @@ REPO_FOLDER = str(Path(__file__).parent.parent.parent)
 DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 
 LEARNING_RATE = 1e-4
-EPOCHS = 1
+EPOCHS = 20
 model: DistilBertForTokenClassification
 optimizer: torch.optim.Adam
 num_labels: int
@@ -140,8 +140,8 @@ def main():
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
     
     for epoch in range(EPOCHS):
-        # loss = train_epoch(trn_loader)
-        # print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
+        loss = train_epoch(trn_loader)
+        print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
         results = evaluation(tst_loader)
         print(f"Test Accuracy: {results[0]}, F1: {results[1]}")
         if epoch == EPOCHS - 1:
