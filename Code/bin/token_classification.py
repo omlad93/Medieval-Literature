@@ -128,7 +128,7 @@ def set_globals(local_num_labels, trn_targets):
     model.to(DEVICE)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
     class_weights = utils.class_weight.compute_class_weight('balanced', classes=np.unique(trn_targets), y=trn_targets)
-    loss_func = torch.nn.CrossEntropyLoss(torch.tensor(class_weights, dtype=torch.float))
+    loss_func = torch.nn.CrossEntropyLoss(torch.tensor(class_weights, dtype=torch.float).to(DEVICE))
 
 
 def main():
