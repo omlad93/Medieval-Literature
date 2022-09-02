@@ -1,10 +1,10 @@
 import os
 import re
 from nltk.tokenize import sent_tokenize, word_tokenize
-from gensim.models import Word2Vec
+# from gensim.models import Word2Vec
 
 PLAY_FILES_DIR = 'Raw_Data/plays/'
-CORPUS_DIR = 'Data/corpus.txt'
+CORPUS_DIR = 'Data/corpus_pretrain.txt'
 
 def build_corpus():
     play_files = os.listdir(PLAY_FILES_DIR)
@@ -17,9 +17,10 @@ def build_corpus():
         if not file.endswith("processed.txt"):
             text = text[text.index('ACT 1'):]
         for i in sent_tokenize(text):
-            i = re.sub('[^a-zA-Z0-9 \n]', '', i)
-            words = word_tokenize(i)
-            corpus_file.write(f"{' '.join(words)}\n")
+            # i = re.sub('[^a-zA-Z0-9 \n]', '', i)
+            # words = word_tokenize(i)
+            # corpus_file.write(f"{' '.join(words)}\n")
+            corpus_file.write(f"{i}\n")
 
 def load_and_pretrain_model():
     corpus = open(CORPUS_DIR)
@@ -29,5 +30,5 @@ def load_and_pretrain_model():
     model.save('w2v-plays.model')
     model.wv.save('w2v-plays.wv')
 
-# build_corpus()
-load_and_pretrain_model()
+build_corpus()
+# load_and_pretrain_model()
