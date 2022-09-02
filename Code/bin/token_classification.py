@@ -124,33 +124,32 @@ def main():
     print("hi")
     save_model_path = f"{REPO_FOLDER}/trained_models/token_classification.pt"
     original_df = parse_csv_token_classification(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv", fix_spelling=True)
-    for threshold in [100]:
-        tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"], threshold=threshold)
-        df = filter_ignored_labels(original_df, unique_tags.keys())
-        trn_loader, trn_labels, tst_loader, tst_labels = loader(df, default_label, tag2idx)
-        trn_labels = sorted([idx2tag[x] for x in trn_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
-        tst_labels = sorted([idx2tag[x] for x in tst_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
+    tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"])
+    # df = filter_ignored_labels(original_df, unique_tags.keys())
+    trn_loader, trn_labels, tst_loader, tst_labels = loader(original_df, default_label, tag2idx)
+    trn_labels = sorted([idx2tag[x] for x in trn_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
+    tst_labels = sorted([idx2tag[x] for x in tst_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
 
-        global model, optimizer, num_labels
-        num_labels = len(unique_tags)
-        model = DistilBertForTokenClassification.from_pretrained(f"{REPO_FOLDER}/Code/model/pretrained", num_labels=num_labels)
-        model.to(DEVICE)
-        optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
-        print(f"Threshold: {threshold}, Labels: {num_labels}")
-        best_f1, best_acc = 0, 0
-        for epoch in range(EPOCHS):
-            loss = train_epoch(trn_loader)
-            print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
-            acc, f1, y_true, y_pred = evaluation(tst_loader)
-            print(f"Test Accuracy: {acc}, F1: {f1}")
-        # if f1 > best_f1 and (acc > best_acc or best_acc - acc < 0.01):
-        #     best_f1 = f1
-        #     best_acc = acc
-        #     torch.save(model.state_dict(), save_model_path)
-        # if epoch == EPOCHS - 1:
-        #     model.load_state_dict(torch.load(save_model_path))
-        #     model.eval()
-        #     draw_confusion_matrix([idx2tag[x] for x in y_true], [idx2tag[x] for x in y_pred], tst_labels)
+    global model, optimizer, num_labels
+    num_labels = len(unique_tags)
+    model = DistilBertForTokenClassification.from_pretrained(f"{REPO_FOLDER}/Code/model/pretrained", num_labels=num_labels)
+    model.to(DEVICE)
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
+
+    best_f1, best_acc = 0, 0
+    for epoch in range(EPOCHS):
+        loss = train_epoch(trn_loader)
+        print(f"Finished Epoch: {epoch+1}, Loss: {loss}")
+        acc, f1, y_true, y_pred = evaluation(tst_loader)
+        print(f"Test Accuracy: {acc}, F1: {f1}")
+        if f1 > best_f1 and (acc > best_acc or best_acc - acc < 0.01):
+            best_f1 = f1
+            best_acc = acc
+            torch.save(model.state_dict(), save_model_path)
+        if epoch == EPOCHS - 1:
+            model.load_state_dict(torch.load(save_model_path))
+            model.eval()
+            draw_confusion_matrix([idx2tag[x] for x in y_true], [idx2tag[x] for x in y_pred], tst_labels)
 
 if __name__ == "__main__":
     main()
