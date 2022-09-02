@@ -6,6 +6,6 @@
 #SBATCH --time=1-0:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --nodelist=s-002
-#SBATCH --gpus=2
+#SBATCH --nodelist=s-006
+#SBATCH --gpus=4
 python token_classification.py
