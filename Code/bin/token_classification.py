@@ -6,7 +6,7 @@ from parsing.parse_csv import *
 from Labels.labels import *
 from model.ttm_dataset import *
 from tqdm import tqdm
-from sklearn import metrics
+from sklearn import metrics, utils
 from transformers import DistilBertForTokenClassification
 import torch
 from torch import cuda
@@ -19,6 +19,7 @@ DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 LEARNING_RATE = 1e-4
 EPOCHS = 20
 model: DistilBertForTokenClassification
+loss_func: torch.nn.CrossEntropyLoss
 optimizer: torch.optim.Adam
 num_labels: int
 
@@ -31,19 +32,19 @@ def loader(df: DataFrame, default_label, tag2idx):
     tst_data = tst_data.reset_index(drop=True)
     trn_set = TTMDataset(trn_data, default_label, tag2idx)
     tst_set = TTMDataset(tst_data, default_label, tag2idx)
+    trn_labels = np.array(trn_set.labels).flatten()
     loader_params = {'batch_size': BATCH_SIZE,
                 'shuffle': True,
                 'num_workers': 0
                 }
     trn_loader = DataLoader(trn_set, **loader_params)
     tst_loader = DataLoader(tst_set, **loader_params)
-    return (trn_loader, trn_set.unique_labels, tst_loader, tst_set.unique_labels)
+    return (trn_loader, trn_set.unique_labels, trn_labels, tst_loader, tst_set.unique_labels)
 
 def train_epoch(trn_loader):
     ''' Train Data'''
     total_loss = 0
     steps = 0
-    loss_func = torch.nn.CrossEntropyLoss()
     model.train()
     for tokens, labels in tqdm(trn_loader):
         labels = labels.to(DEVICE)
@@ -120,22 +121,27 @@ def draw_confusion_matrix(y_true, y_preds, sorted_labels):
         ax=ax)
     plt.savefig('bottom_labels.png')
 
-def main():
-    print("hi")
-    save_model_path = f"{REPO_FOLDER}/trained_models/token_classification.pt"
-    original_df = parse_csv_token_classification(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv", fix_spelling=True)
-    tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"])
-    # df = filter_ignored_labels(original_df, unique_tags.keys())
-    trn_loader, trn_labels, tst_loader, tst_labels = loader(original_df, default_label, tag2idx)
-    trn_labels = sorted([idx2tag[x] for x in trn_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
-    tst_labels = sorted([idx2tag[x] for x in tst_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
-
-    global model, optimizer, num_labels
-    num_labels = len(unique_tags)
+def set_globals(local_num_labels, trn_targets):
+    global model, loss_func, optimizer, num_labels
+    num_labels = local_num_labels
     model = DistilBertForTokenClassification.from_pretrained(f"{REPO_FOLDER}/Code/model/pretrained", num_labels=num_labels)
     model.to(DEVICE)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
+    class_weights = utils.class_weight.compute_class_weight('balanced', num_labels, trn_targets)
+    loss_func = torch.nn.CrossEntropyLoss(torch.tensor(class_weights, dtype=torch.float))
 
+
+def main():
+    print("hi")
+    save_model_path = f"{REPO_FOLDER}/trained_models/tc_pretrained_corrections_weighted_loss.pt"
+    original_df = parse_csv_token_classification(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv", fix_spelling=True)
+    tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"])
+    # df = filter_ignored_labels(original_df, unique_tags.keys())
+    trn_loader, trn_labels, trn_targets, tst_loader, tst_labels = loader(original_df, default_label, tag2idx)
+    trn_labels = sorted([idx2tag[x] for x in trn_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
+    tst_labels = sorted([idx2tag[x] for x in tst_labels], key=cmp_to_key(lambda a, b: unique_tags[a] - unique_tags[b]))
+    
+    set_globals(len(unique_tags), trn_targets)
     best_f1, best_acc = 0, 0
     for epoch in range(EPOCHS):
         loss = train_epoch(trn_loader)
