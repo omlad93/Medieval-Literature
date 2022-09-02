@@ -127,7 +127,7 @@ def set_globals(local_num_labels, trn_targets):
     model = DistilBertForTokenClassification.from_pretrained(f"{REPO_FOLDER}/Code/model/pretrained", num_labels=num_labels)
     model.to(DEVICE)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
-    class_weights = utils.class_weight.compute_class_weight('balanced', num_labels, trn_targets)
+    class_weights = utils.class_weight.compute_class_weight('balanced', classes=num_labels, y=trn_targets)
     loss_func = torch.nn.CrossEntropyLoss(torch.tensor(class_weights, dtype=torch.float))
 
 
