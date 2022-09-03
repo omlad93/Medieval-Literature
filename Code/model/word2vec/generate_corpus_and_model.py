@@ -1,5 +1,9 @@
+import sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).parent.parent.parent))
 import os
 import re
+from parsing.word_corrections import rephrase
 from nltk.tokenize import sent_tokenize, word_tokenize
 # from gensim.models import Word2Vec
 
@@ -30,5 +34,18 @@ def load_and_pretrain_model():
     model.save('w2v-plays.model')
     model.wv.save('w2v-plays.wv')
 
-build_corpus()
+def word_corrections():
+    corpus_file = open(CORPUS_DIR, 'w')
+    file = open('Data/corpus_pretrain_original.txt')
+    text = file.readline()
+    while text:
+        sentence = rephrase(text)
+        corpus_file.write(f"{sentence}")
+        text = file.readline()
+    file.close()
+    corpus_file.close()
+
+
+# build_corpus()
 # load_and_pretrain_model()
+word_corrections()
