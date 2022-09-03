@@ -7,7 +7,7 @@ from Labels.labels import *
 from model.ttm_dataset import *
 from tqdm import tqdm
 from sklearn import metrics, utils
-from transformers import DistilBertForTokenClassification
+from transformers import DistilBertForTokenClassification, RobertaForTokenClassification
 import torch
 from torch import cuda
 from torch.utils.data import DataLoader
@@ -16,7 +16,7 @@ from functools import cmp_to_key
 REPO_FOLDER = str(Path(__file__).parent.parent.parent)
 DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 5e-5
 EPOCHS = 20
 model: DistilBertForTokenClassification
 loss_func: torch.nn.CrossEntropyLoss
@@ -45,14 +45,15 @@ def train_epoch(trn_loader):
     ''' Train Data'''
     total_loss = 0
     steps = 0
+    gradient_acc_steps = EFFECTIVE_BATCH_SIZE/BATCH_SIZE
     model.train()
+    optimizer.zero_grad()
     for tokens, labels in tqdm(trn_loader):
         labels = labels.to(DEVICE)
         # squeeze in order to match the sizes. From [batch,1,seq_len] --> [batch,seq_len] 
         mask = tokens['attention_mask'].squeeze(1).to(DEVICE)
         ids = tokens['input_ids'].squeeze(1).to(DEVICE)
 
-        optimizer.zero_grad()
         logits = model(ids, mask).logits
         active_loss = mask.view(-1) == 1
         active_logits = logits.view(-1, num_labels)
@@ -61,8 +62,11 @@ def train_epoch(trn_loader):
         )
         loss = loss_func(active_logits, active_labels)
         total_loss += loss.item()
+        loss /= gradient_acc_steps
         loss.backward()
-        optimizer.step()
+        if (steps+1) % gradient_acc_steps == 0:
+            optimizer.step()
+            optimizer.zero_grad()
         steps += 1
     return total_loss / steps
 
@@ -124,16 +128,17 @@ def draw_confusion_matrix(y_true, y_preds, sorted_labels):
 def set_globals(local_num_labels, trn_targets):
     global model, loss_func, optimizer, num_labels
     num_labels = local_num_labels
-    model = DistilBertForTokenClassification.from_pretrained(f"{REPO_FOLDER}/Code/model/pretrained", num_labels=num_labels)
+    model = RobertaForTokenClassification.from_pretrained(f"{REPO_FOLDER}/Code/model/pretrained", num_labels=num_labels)
     model.to(DEVICE)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
-    class_weights = utils.class_weight.compute_class_weight('balanced', classes=np.unique(trn_targets), y=trn_targets)
-    loss_func = torch.nn.CrossEntropyLoss(torch.tensor(class_weights, dtype=torch.float).to(DEVICE))
+    # class_weights = utils.class_weight.compute_class_weight('balanced', classes=np.unique(trn_targets), y=trn_targets)
+    # loss_func = torch.nn.CrossEntropyLoss(torch.tensor(class_weights, dtype=torch.float).to(DEVICE))
+    loss_func = torch.nn.CrossEntropyLoss()
 
 
 def main():
     print("hi")
-    save_model_path = f"{REPO_FOLDER}/trained_models/tc_pretrained_corrections_weighted_loss.pt"
+    save_model_path = f"{REPO_FOLDER}/trained_models/tc_pretrained_corrections_roberta.pt"
     original_df = parse_csv_token_classification(f"{REPO_FOLDER}/Data/csv/per-word-combined.csv", fix_spelling=True)
     tag2idx, idx2tag, default_label, unique_tags = tags_mapping(original_df["labels"])
     # df = filter_ignored_labels(original_df, unique_tags.keys())

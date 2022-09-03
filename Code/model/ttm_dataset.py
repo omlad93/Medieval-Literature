@@ -6,10 +6,11 @@ from torch.utils.data import Dataset
 from matplotlib import pyplot as plt
 
 MAX_LEN = 256
-BATCH_SIZE = 8
+BATCH_SIZE = 2
+EFFECTIVE_BATCH_SIZE = 8
 INSTANCE_THRESHOLD = 0
 
-tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased', truncation=True, do_lower_case=True)
+tokenizer = AutoTokenizer.from_pretrained('roberta-base', truncation=True, do_lower_case=True)
 
 def draw_charts(data: dict[str, int], histogram=True):
   labels = []
