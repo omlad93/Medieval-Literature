@@ -8,7 +8,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 # from gensim.models import Word2Vec
 
 PLAY_FILES_DIR = 'Raw_Data/plays/'
-CORPUS_DIR = 'Data/corpus_pretrain.txt'
+CORPUS_DIR = 'Data/corpus_validation.txt'
 
 def build_corpus():
     play_files = os.listdir(PLAY_FILES_DIR)
@@ -36,7 +36,7 @@ def load_and_pretrain_model():
 
 def word_corrections():
     corpus_file = open(CORPUS_DIR, 'w')
-    file = open('Data/corpus_pretrain_original.txt')
+    file = open('Data/corpus_validation_original.txt')
     text = file.readline()
     while text:
         sentence = rephrase(text)
