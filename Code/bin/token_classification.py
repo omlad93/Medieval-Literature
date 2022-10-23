@@ -17,7 +17,7 @@ REPO_FOLDER = str(Path(__file__).parent.parent.parent)
 DEVICE = 'cuda' if cuda.is_available() else 'cpu'
 
 LEARNING_RATE = 5e-5
-EPOCHS = 20
+EPOCHS = 25
 model: DistilBertForTokenClassification
 loss_func: torch.nn.CrossEntropyLoss
 optimizer: torch.optim.Adam

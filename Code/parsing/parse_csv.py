@@ -159,6 +159,17 @@ def parse_csv_token_classification(path: str, fix_spelling=False)->DataFrame:
     df = df[[c for c in df.columns if c in {'text','labels','topics'}]]  
     return df
 
+def parse_csv_for_prediction(path: str, fix_spelling=False)->DataFrame:
+    '''
+    Parses a csv file and returns a dataframe of fragments only (no labels)
+    '''
+    df = pd.read_csv(path, keep_default_na=False)
+    df.rename(columns={'Fragment':'text'},inplace=True)
+    if fix_spelling:
+        df['text'] = df['text'].apply(rephrase)
+    df = df[[c for c in df.columns if c in {'text'}]]
+    return df
+
 def intersect_labels(current_labels: list[Label], allowed_labels: set[str]):
     current_set = set([label.name for label in current_labels])
     return len(current_set.intersection(allowed_labels))

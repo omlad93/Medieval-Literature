@@ -373,7 +373,7 @@ class Label(Enum):
 
         '''
         label = format_label(topic) 
-        assert label, f'{topic=}, {label=}'
+        assert label, f'topic={topic}, label={label}'
         try:
             try:
                 # For a Correct Label

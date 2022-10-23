@@ -1,16 +1,16 @@
 import numpy as np
 import pandas as pd
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 import torch
 from torch.utils.data import Dataset
 from matplotlib import pyplot as plt
 
 MAX_LEN = 256
-BATCH_SIZE = 2
+BATCH_SIZE = 4
 EFFECTIVE_BATCH_SIZE = 8
 INSTANCE_THRESHOLD = 0
 
-tokenizer = AutoTokenizer.from_pretrained('roberta-base', truncation=True, do_lower_case=True)
+tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained('roberta-base', truncation=True, do_lower_case=True)
 
 def draw_charts(data: dict[str, int], histogram=True):
   labels = []
@@ -90,6 +90,33 @@ def match_tokens_labels(tokenized_input, tags, tag2idx, ignore_token = 0):
             except:
                 label_ids.append(ignore_token)
     return label_ids
+
+def decode_tokens(input_ids):
+  return [' '.join(tokenizer.convert_ids_to_tokens(x)) for x in input_ids]
+
+class TCPredictionDataset(Dataset):
+  """
+  Custom dataset implementation to get only text batches for predictions
+  Inputs:
+   - df : dataframe with column [text]
+  """
+  
+  def __init__(self, df):
+    if not isinstance(df, pd.DataFrame):
+      raise TypeError('Input should be a dataframe')
+    
+    if "text" not in df.columns:
+      raise ValueError("Dataframe should contain 'text' column")
+
+    texts = df["text"].values.tolist()
+    self.texts = [tokenizer(text, padding = "max_length", max_length=MAX_LEN, truncation = True, return_tensors = "pt") for text in texts]
+
+  def __len__(self):
+    return len(self.texts)
+
+  def __getitem__(self, idx):
+    batch_text = self.texts[idx]
+    return batch_text
 
 class TTMDataset(Dataset):
   """
